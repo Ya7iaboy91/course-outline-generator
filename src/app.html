@@ -166,14 +166,52 @@ let S = defaultState();
 let activeTab = 'courseinfo';
 const LS_KEY = 'course_outline_static_state';
 
+let _db = null;
+function idbReady() {
+  if (_db) return Promise.resolve(_db);
+  if (!window.indexedDB) return Promise.reject(new Error('no idb'));
+  return new Promise((res, rej) => {
+    const req = indexedDB.open('course_outline_db', 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore('kv');
+    req.onsuccess = e => { _db = e.target.result; res(_db); };
+    req.onerror = e => rej(e.target.error);
+  });
+}
+function idbGet(key) {
+  return idbReady().then(db => new Promise((res, rej) => {
+    const r = db.transaction('kv', 'readonly').objectStore('kv').get(key);
+    r.onsuccess = () => res(r.result);
+    r.onerror = e => rej(e.target.error);
+  }));
+}
+function idbSet(key, value) {
+  return idbReady().then(db => new Promise((res, rej) => {
+    const r = db.transaction('kv', 'readwrite').objectStore('kv').put(value, key);
+    r.onsuccess = () => res();
+    r.onerror = e => rej(e.target.error);
+  }));
+}
+function idbClear() {
+  return idbReady().then(db => new Promise((res, rej) => {
+    const r = db.transaction('kv', 'readwrite').objectStore('kv').clear();
+    r.onsuccess = () => res();
+    r.onerror = e => rej(e.target.error);
+  })).catch(() => {});
+}
 function loadLS() {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
+  return idbGet(LS_KEY).then(raw => {
     if (raw) { S = normalizeState(JSON.parse(raw)); _seq = 1000; }
-  } catch (e) { /* ignore */ }
+  }).catch(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) { S = normalizeState(JSON.parse(raw)); _seq = 1000; }
+    } catch (e) { /* ignore */ }
+  });
 }
 function saveLS() {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) { /* ignore */ }
+  idbSet(LS_KEY, JSON.stringify(S)).catch(() => {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) { /* ignore */ }
+  });
 }
 function normalizeState(o) {
   const d = defaultState();
@@ -412,21 +450,29 @@ document.addEventListener('change', e => {
   }
 });
 function scaleImage(file, maxW, maxH, cb) {
-  const img = new Image();
-  img.onload = () => {
-    let w = img.width, h = img.height;
-    const k = Math.min(1, maxW / w, maxH / h);
-    if (k < 1) { w = Math.round(w * k); h = Math.round(h * k); }
-    const c = document.createElement('canvas');
-    c.width = Math.max(1, w); c.height = Math.max(1, h);
-    const g = c.getContext('2d');
-    g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
-    g.drawImage(img, 0, 0, c.width, c.height);
-    cb(c.toDataURL('image/jpeg', 0.8));
-  };
-  img.onerror = () => cb(null);
   const reader = new FileReader();
-  reader.onload = () => { img.src = reader.result; };
+  reader.onerror = () => cb(null);
+  reader.onload = () => {
+    const original = reader.result;
+    const img = new Image();
+    img.onerror = () => cb(original);
+    img.onload = () => {
+      try {
+        let w = img.width, h = img.height;
+        const k = Math.min(1, maxW / w, maxH / h);
+        if (k < 1) { w = Math.round(w * k); h = Math.round(h * k); }
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, w); c.height = Math.max(1, h);
+        const g = c.getContext('2d');
+        g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+        g.drawImage(img, 0, 0, c.width, c.height);
+        cb(c.toDataURL('image/jpeg', 0.8));
+      } catch (e) {
+        cb(original);
+      }
+    };
+    img.src = original;
+  };
   reader.readAsDataURL(file);
 }
 document.addEventListener('click', e => {
@@ -459,6 +505,7 @@ function syncWeeks(target) {
 document.getElementById('genBtn').addEventListener('click', generate);
 document.getElementById('resetBtn').addEventListener('click', () => {
   if (confirm('Clear all data and start over?')) {
+    idbClear();
     try { localStorage.removeItem(LS_KEY); } catch (e) {}
     S = defaultState(); render();
     setMsg('', '');
@@ -843,8 +890,7 @@ pdfMake.fonts = {
     bolditalics: 'PTSerif-BoldItalic.ttf',
   },
 };
-loadLS();
-render();
+loadLS().then(render);
 </script>
 </body>
 </html>

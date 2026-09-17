@@ -45,8 +45,7 @@ Either copy `course-outline-generator.html` to share, or use it directly from he
 1. Open `course-outline-generator.html` in any modern browser (or open the URL if hosted).
 2. Fill the tabs, then click **Generate PDF** in the sidebar.
 3. The download is `Course Outline - {code}.pdf`.
-4. Use **Save JSON** / **Load JSON** to keep drafts or move a course to a new semester.
-   Data is also auto-saved in the browser (localStorage) while you work.
+4. Data is auto-saved in the browser (localStorage) while you work.
 
 ## Notes / differences from the server version
 
@@ -54,6 +53,6 @@ Either copy `course-outline-generator.html` to share, or use it directly from he
   rendered as bullets; raw LaTeX environments (`\begin{itemize}`…`\end{itemize}`) are
   stripped automatically for compatibility with older JSON files from the server app.
 - Characters like `%`, `&`, `_`, `#` are plain text now — no escaping needed.
-- Output PDF is close to the LaTeX output but not pixel-identical (Roboto fonts,
+- Output PDF is close to the LaTeX output but not pixel-identical (PT Serif fonts,
   not Palatino).
 - All processing is client-side; no data leaves the machine.

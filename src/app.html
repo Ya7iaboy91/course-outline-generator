@@ -141,8 +141,14 @@ function defaultState() {
   const policies = {};
   POLICIES.forEach(p => policies[p.key] = { enabled: POLICY_DEFAULTS[p.key].enabled, text: POLICY_DEFAULTS[p.key].text });
   return {
-    school_name: SCHOOL_NAME_DEFAULT, year_semester: '', course_name: '', course_code: '',
-    credits: '', prerequisites: '', classes_time: '', passing_grade: PASSING_GRADE_DEFAULT,
+    school_name: SCHOOL_NAME_DEFAULT, 
+    year_semester: '', 
+    course_name: '', 
+    course_code: '',
+    credits: '', 
+    prerequisites: '', 
+    classes_time: '', 
+    passing_grade: PASSING_GRADE_DEFAULT,
     has_ta: false,
     instructor: { name: '', email: '', room: '', office_hours: '' },
     ta: { name: '', email: '', room: '', office_hours: '' },
@@ -199,8 +205,8 @@ function setPath(bind, value) {
   else if (kind === 'as') { const r = byId(S.assessments, p[1]); if (r) r[p[2]] = value; }
   else if (kind === 'pol') { const pol = S.policies[p[1]]; if (pol) pol[p[2]] = value; }
   else {
-    const parts = bind.split('.');
-    let o = S; for (let i = 0; i < parts.length - 1; i++) o = o[parts[i]];
+    const parts = bind.split('.')
+    let o = S; for (let i = 0; i < parts.length - 1; i++) o = o[parts[i]]
     if (o) o[parts[parts.length - 1]] = value;
   }
   saveLS();
@@ -230,21 +236,27 @@ function render() {
 const RENDERERS = {
   courseinfo() {
     return `<div class="card">
-      <div class="caption">Basic course information shown in the header table of the PDF.</div>
-      <div class="field"><label>School Name</label><input data-bind="school_name" value="${esc(S.school_name)}"></div>
+      <div class="caption">Course Information</div>
+      <!-- Wrapped in a row for margin spacing -->
+      <div class="row">
+        <div class="field"><label>School Name</label><input data-bind="school_name" value="${esc(S.school_name)}"></div>
+      </div>
       <div class="row">
         <div class="field"><label>Year/Semester</label><input data-bind="year_semester" placeholder="e.g. Fall 2026" value="${esc(S.year_semester)}"></div>
         <div class="field"><label class="req">Course Name</label><input data-bind="course_name" placeholder="e.g. Introduction to Data Science" value="${esc(S.course_name)}"></div>
       </div>
       <div class="row">
-        <div class="field"><label class="req">Course Code</label><input data-bind="course_code" placeholder="e.g. AMS-1910" value="${esc(S.course_code)}"></div>
+        <div class="field"><label class="req">Course Code</label><input data-bind="course_code" placeholder="e.g. AMS 1910" value="${esc(S.course_code)}"></div>
         <div class="field"><label>Credits</label><input data-bind="credits" placeholder="e.g. 3" value="${esc(S.credits)}"></div>
       </div>
       <div class="row">
-        <div class="field"><label>Pre-requisites</label><input data-bind="prerequisites" placeholder="e.g. AMS-1900" value="${esc(S.prerequisites)}"></div>
+        <div class="field"><label>Pre-requisites</label><input data-bind="prerequisites" placeholder="e.g. AMS 1900 or None" value="${esc(S.prerequisites)}"></div>
         <div class="field"><label>Passing Grade</label><input data-bind="passing_grade" value="${esc(S.passing_grade)}"></div>
       </div>
-      <div class="field"><label>Classes Time / Location</label><textarea data-bind="classes_time" rows="4" placeholder="e.g. Monday, 10:00 AM - 11:00 AM (B105). One line per entry.">${esc(S.classes_time)}</textarea></div>
+      <!-- Wrapped in a row for consistent spacing at the bottom -->
+      <div class="row">
+        <div class="field"><label>Classes Time / Location</label><textarea data-bind="classes_time" rows="4" placeholder="e.g. Monday, 10:00 AM - 11:00 AM (B105). One line per entry.">${esc(S.classes_time)}</textarea></div>
+      </div>
     </div>`;
   },
 
@@ -253,21 +265,21 @@ const RENDERERS = {
       <label class="toggle"><input type="checkbox" data-bind="has_ta" ${S.has_ta?'checked':''}> This course has a Teaching Assistant (TA)</label>
       <h3 style="margin:6px 0 10px;font-size:14px;color:#333">Instructor</h3>
       <div class="row">
-        <div class="field"><label>Name</label><input data-bind="instructor.name" placeholder="e.g. John Doe" value="${esc(S.instructor.name)}"></div>
-        <div class="field"><label>E-mail</label><input data-bind="instructor.email" placeholder="e.g. john.doe@university.edu" value="${esc(S.instructor.email)}"></div>
+        <div class="field"><label>Name</label><input data-bind="instructor.name" value="${esc(S.instructor.name)}"></div>
+        <div class="field"><label>E-mail</label><input data-bind="instructor.email" value="${esc(S.instructor.email)}"></div>
       </div>
       <div class="row">
-        <div class="field"><label>Room</label><input data-bind="instructor.room" placeholder="e.g. B105" value="${esc(S.instructor.room)}"></div>
+        <div class="field"><label>Office Room</label><input data-bind="instructor.room" placeholder="e.g. B105" value="${esc(S.instructor.room)}"></div>
         <div class="field"><label>Office Hours</label><input data-bind="instructor.office_hours" placeholder="e.g. Monday, 2nd slot" value="${esc(S.instructor.office_hours)}"></div>
       </div>
       ${S.has_ta ? `<hr class="rule">
       <h3 style="margin:0 0 10px;font-size:14px;color:#333">Teaching Assistant</h3>
       <div class="row">
-        <div class="field"><label>Name</label><input data-bind="ta.name" placeholder="e.g. Jane Smith" value="${esc(S.ta.name)}"></div>
-        <div class="field"><label>E-mail</label><input data-bind="ta.email" placeholder="e.g. jane.smith@university.edu" value="${esc(S.ta.email)}"></div>
+        <div class="field"><label>Name</label><input data-bind="ta.name value="${esc(S.ta.name)}"></div>
+        <div class="field"><label>E-mail</label><input data-bind="ta.email value="${esc(S.ta.email)}"></div>
       </div>
       <div class="row">
-        <div class="field"><label>Room</label><input data-bind="ta.room" placeholder="e.g. B105" value="${esc(S.ta.room)}"></div>
+        <div class="field"><label>Office Room</label><input data-bind="ta.room" placeholder="e.g. B105" value="${esc(S.ta.room)}"></div>
         <div class="field"><label>Office Hours</label><input data-bind="ta.office_hours" value="${esc(S.ta.office_hours)}"></div>
       </div>` : ''}
     </div>`;
@@ -275,8 +287,7 @@ const RENDERERS = {
 
   description() {
     return `<div class="card">
-      <div class="caption">Enter the course description here as per the UPEI course catalogue. One paragraph; blank lines become line breaks.</div>
-      <div class="field"><textarea data-bind="description" rows="14">${esc(S.description)}</textarea></div>
+            <div class="field"><label>Course Description</label><textarea data-bind="description" placeholder="Enter the course description here as per the UPEI course catalogue." rows="14">${esc(S.description)}</textarea></div>
     </div>`;
   },
 
@@ -292,7 +303,7 @@ const RENDERERS = {
       ${LO_COLUMNS.map(([f]) => `<span style="flex:1.2" class="checkrow"><input type="checkbox" data-bind="lo:${lo.id}:${f}" ${lo[f]?'checked':''}></span>`).join('')}
     </div>`).join('');
     return `<div class="card">
-      <div class="caption">One learning objective per row. Empty rows are dropped from the PDF.</div>
+      <div class="caption">Insert one learning objective per row. Empty rows are dropped from the PDF.</div>
       ${rows}
       <div><button class="minibtn" data-action="add_lo">+ Add learning objective</button></div>
       <hr class="rule">
@@ -309,20 +320,20 @@ const RENDERERS = {
         <div class="preview">${tb.image ? `<img src="${tb.image}">` : ''}</div>
         <div class="uploads" style="flex:1">
           <label class="minibtn" style="margin-top:0">${tb.image ? 'Replace cover' : 'Upload cover (png/jpg)'}<input type="file" accept="image/png,image/jpeg" data-upload="tb:${tb.id}" style="display:none"></label>
-          <div class="field"><input data-bind="tb:${tb.id}:title" placeholder="Title * — e.g., Introduction to Linear Algebra" value="${esc(tb.title)}"></div>
         </div>
       </div>
       <div class="row" style="margin-top:12px">
-        <div class="field"><label>Author</label><input data-bind="tb:${tb.id}:author" placeholder="e.g. Jane Smith" value="${esc(tb.author)}"></div>
-        <div class="field"><label>Publisher</label><input data-bind="tb:${tb.id}:publisher" placeholder="e.g. Academic Press" value="${esc(tb.publisher)}"></div>
+        <div class="field"><label>Title *</label><input data-bind="tb:${tb.id}:title" placeholder="Introduction to Linear Algebra" value="${esc(tb.title)}"></div>
+        <div class="field"><label>Author</label><input data-bind="tb:${tb.id}:author" placeholder="Jane Smith" value="${esc(tb.author)}"></div>
       </div>
       <div class="row">
-        <div class="field"><label>ISBN-13</label><input data-bind="tb:${tb.id}:isbn" placeholder="e.g. 978-0123456789" value="${esc(tb.isbn)}"></div>
+        <div class="field"><label>Publisher</label><input data-bind="tb:${tb.id}:publisher" placeholder="Academic Press" value="${esc(tb.publisher)}"></div>
+        <div class="field"><label>ISBN-13</label><input data-bind="tb:${tb.id}:isbn" placeholder="978-0123456789" value="${esc(tb.isbn)}"></div>
       </div>
       <button class="delbtn" data-action="rm_tb:${tb.id}" ${S.textbooks.length===1?'disabled':''}>Remove</button>
     </div>`).join('');
     return `<div class="card">
-      <div class="caption">At least one textbook row is required. The title is required; other fields are optional. Empty rows are dropped from the PDF.</div>
+      <div class="caption">At least one textbook is required.</div>
       ${rows}
       <div><button class="minibtn" data-action="add_tb">+ Add textbook</button></div>
     </div>`;
@@ -347,17 +358,17 @@ const RENDERERS = {
   grading() {
     const header = ['Assessment', 'Weight', 'Due', 'LOs Assessed'].map(h => `<span style="flex:1.2;font-size:12.5px;font-weight:600">${esc(h)}</span>`).join('');
     const rows = S.assessments.map((a) => `<div class="row" style="align-items:center;gap:8px;margin-bottom:10px">
-      <span style="flex:1.2 1 220px;min-width:220px"><input data-bind="as:${a.id}:name" placeholder="e.g. Assignments (4), Midterm, Final Exam" value="${esc(a.name)}"></span>
+      <span style="flex:1.2 1 220px;min-width:220px"><input data-bind="as:${a.id}:name" placeholder="e.g. Assignments" value="${esc(a.name)}"></span>
       <span style="flex:1.2 1 220px;min-width:220px"><input data-bind="as:${a.id}:weight" placeholder="e.g. 30%" value="${esc(a.weight)}"></span>
       <span style="flex:1.2 1 220px;min-width:220px"><input data-bind="as:${a.id}:due" placeholder="e.g. 2026-09-15" value="${esc(a.due)}"></span>
       <span style="flex:1.2 1 220px;min-width:220px"><input data-bind="as:${a.id}:los" placeholder="e.g. LO1, LO2, LO3" value="${esc(a.los)}"></span>
       <div style="flex:0 0 auto"><button class="delbtn" data-action="rm_as:${a.id}" ${S.assessments.length===1?'disabled':''}>Remove</button></div>
     </div>`).join('');
     return `<div class="card">
-      <div class="caption">Order rows by weight. No weight-sum validation is applied.</div>
+      <div class="caption">Zoom-out for better grid view.</div>
       <div class="gridhead" style="gap:16px">${header}</div>
       ${rows}
-      <div style="margin-top:6px"><button class="minibtn" data-action="add_as">+ Add assessment row</button></div>
+      <div style="margin-top:6px"><button class="minibtn" data-action="add_as">+ Add row</button></div>
     </div>`;
   },
 
@@ -754,7 +765,7 @@ function buildDoc(data) {
     'The instructors are not required to substitute assignments or do make-up examinations for absent students.',
     'It is the student\u2019s responsibility to make up the class content missed in consultation with his/her instructor(s). This does not mean that the instructor will provide a substitute class for the student.',
     'Grades can be affected by missing a class as the instructor may include class participation marks and/or in-class assignments, or pop-up quizzes as part of the assessment plan for the course.',
-    'If a student is absent for 25% or more of the class time, tutorials, labs, and/or mandatory office hours, the instructor may:',
+    'If a student is absent for 25% or more of the class time, tutorials, labs, and/or mandatory office hours, the instructor may:'
   ]});
   C.push({ ul: [
     'Advise the student to drop the course if the absences occur before the drop date for a course.',
@@ -788,7 +799,7 @@ function buildDoc(data) {
     'Students that arrive late at class after 10 minutes will not be allowed entrance and will be marked absent.',
     'In keeping with classroom best practices for creating an engaging learning environment, all mobile phones must be turned off or on "vibrate" mode.',
     'Once you come to class, it is expected that you will be there to stay. Please make sure you use the washroom before or after class.',
-    'All students agree to abide by the following professional standards:',
+    'All students agree to abide by the following professional standards:'
   ]});
   C.push({ ul: [
     'Come to class on time and be prepared.',

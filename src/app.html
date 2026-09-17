@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UPEI Style Course Outline Generator</title>
+<style>
+:root{--brand:#7a1d3d;--accent:#c8102e;--ink:#1c1c1e;--mut:#666;}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#f4f5f7;}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:300px;flex:0 0 300px;background:#2b2b33;color:#fff;padding:20px 18px;}
+.sidebar h1{font-size:20px;margin:0 0 4px;color:#fff;line-height:1.2}
+.sidebar .cap{font-size:12px;color:#b8b8c2;margin-bottom:22px}
+.sidebar .hd{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#9a9aa6;margin:20px 0 8px}
+.sidebar button.btn{display:block;width:100%;padding:10px 12px;margin:6px 0;border:none;border-radius:6px;font-size:14px;cursor:pointer;background:#3d3d48;color:#fff;text-align:left}
+.sidebar button.btn:hover{background:#4a4a56}
+.sidebar button.btn.primary{background:var(--accent);text-align:center;font-weight:600}
+.sidebar button.btn.primary:hover{background:#e01e3a}
+.sidebar .msg{font-size:12px;margin-top:14px;white-space:pre-wrap;line-height:1.45}
+.sidebar .msg.ok{color:#7ef29a}
+.sidebar .msg.err{color:#ff9090}
+.sidebar .note{font-size:11px;color:#8f8f9b;margin-top:24px;line-height:1.5}
+.main{flex:1;padding:0 34px 60px;min-width:0}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid #ddd;margin-bottom:20px;position:sticky;top:0;background:#f4f5f7;z-index:5}
+.tabs .tb{padding:12px 16px;background:none;border:none;font-size:14px;cursor:pointer;color:var(--mut);border-bottom:3px solid transparent}
+.tabs .tb:hover{color:var(--ink)}
+.tabs .tb.active{color:var(--brand);border-bottom-color:var(--accent);font-weight:600}
+.card{background:#fff;border:1px solid #e3e4e8;border-radius:8px;padding:22px 24px;max-width:1040px}
+.card.caption{font-size:12px;color:var(--mut);margin-top:-10px;margin-bottom:18px}
+.row{display:flex;gap:16px;margin:0 0 14px;flex-wrap:wrap}
+.field{flex:1;min-width:200px}
+.field label{display:block;font-size:12.5px;font-weight:600;color:#333;margin:0 0 5px}
+.field input[type=text],.field input[type=number]{width:100%;padding:8px 10px;border:1px solid #c9ccd2;border-radius:6px;font-size:14px}
+.field textarea{width:100%;padding:8px 10px;border:1px solid #c9ccd2;border-radius:6px;font-size:14px;resize:vertical}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,16,46,.12)}
+.req::after{content:' *';color:var(--accent)}
+.toggle{display:flex;align-items:center;gap:10px;margin:6px 0 16px;cursor:pointer;font-size:14px}
+.toggle input{width:18px;height:18px;accent-color:var(--accent)}
+.rule{border:none;border-top:1px solid #e3e4e8;margin:20px 0}
+.rowblock{border:1px solid #e3e4e8;border-radius:8px;padding:14px 16px;margin:0 0 14px;background:#fbfbfc}
+.rowblock .lbl{font-weight:600;font-size:13px;margin-bottom:10px;color:#333}
+.minibtn{display:inline-block;padding:6px 12px;border:1px solid #c9ccd2;background:#fff;border-radius:6px;cursor:pointer;font-size:13px;margin-top:8px}
+.minibtn:hover{background:#f2f2f4}
+.delbtn{display:inline-block;padding:6px 12px;border:1px solid #e0c2c2;background:#fff;color:#a33;border-radius:6px;cursor:pointer;font-size:13px}
+.delbtn:hover{background:#fbeaea}
+.delbtn:disabled{color:#bbb;border-color:#e3e4e8;cursor:not-allowed}
+.preview img{width:72px;height:auto;border:1px solid #ddd;border-radius:4px;display:block;margin-bottom:6px}
+.coverbox{display:flex;align-items:flex-start;gap:14px}
+.coverbox .uploads{display:flex;flex-direction:column;gap:6px}
+.checkrow{display:flex;align-items:center;gap:8px;font-size:13px;margin:4px 0}
+.checkrow input{width:16px;height:16px;accent-color:var(--accent)}
+.gridhead{display:flex;font-size:12.5px;font-weight:600;color:#333;margin:14px 0 8px;gap:8px}
+.pols .polcard{border:1px solid #e3e4e8;border-radius:8px;padding:16px;margin-bottom:16px}
+.pols .polcard h3{margin:0 0 4px;font-size:15px}
+.polrow{display:flex;align-items:center;gap:10px;font-size:13.5px;margin:6px 0 10px}
+.polrow input{width:16px;height:16px;accent-color:var(--accent)}
+.foot{font-size:11.5px;color:var(--mut);margin-top:26px}
+@media(max-width:860px){.layout{flex-direction:column}.sidebar{width:100%;flex:none}}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <h1>UPEI Style Course Outline Generator</h1>
+    <div class="cap">Fill the tabs, then generate and download a PDF.</div>
+
+    <div class="hd">Generate &amp; Download</div>
+    <button class="btn primary" id="genBtn">Generate PDF</button>
+    <div class="msg" id="msg"></div>
+
+    <div class="hd">Data</div>
+    <button class="btn" id="saveBtn">Save input to JSON</button>
+    <button class="btn" id="loadBtn">Load from JSON</button>
+    <input type="file" id="loadFile" accept=".json,application/json" style="display:none">
+
+    <div class="hd">New Form</div>
+    <button class="btn" id="resetBtn">Start Over</button>
+
+    <div class="note">Works offline entirely in your browser. Data auto-saves
+    locally while you type. The PDF mirrors the UPEI course-outline layout.</div>
+  </aside>
+
+  <main class="main">
+    <nav class="tabs" id="tabs"></nav>
+    <div id="content"></div>
+    <div class="foot">Note: plain text only — characters like <code>% &amp; # _ $</code> are safe (they feed directly into the PDF, no LaTeX layer).</div>
+  </main>
+</div>
+
+<script>
+__PDFMAKE_JS__
+</script>
+<script>
+__VFS_JS__
+</script>
+<script>
+// ============================================================= config
+const LOGO_DATA = 'data:image/jpeg;base64,__LOGO_B64__';
+const COVER_DATA = 'data:image/jpeg;base64,__COVER_B64__';
+
+const SCHOOL_NAME_DEFAULT = 'Mathematical and Computational Sciences';
+const PASSING_GRADE_DEFAULT = '50%';
+const DEFAULT_WEEKS = 12;
+const DEFAULT_LO_ROWS = 5;
+const DEFAULT_ASMT_ROWS = 4;
+
+const POLICIES = [
+  { key: 'assignment policy', title: 'Assignments Policy (Optional)' },
+  { key: 'participation grading policy', title: 'Participation Grades Policy (Optional)' },
+  { key: 'bonus grading policy', title: 'Bonus Grades Policy (Optional)' },
+];
+
+const POLICY_DEFAULTS = {
+  'assignment policy': {
+    enabled: true,
+    text: 'Each student is expected to submit their own work on the course site, and collaboration should be limited to discussion and understanding of concepts, not copying solutions.\n\\begin{itemize}\n\t\\item There is no and will never be an extra or make-up assignment for any chapter. Students are expected to complete and submit the assignments on time as per the schedule provided in the course outline.\n\t\\item No and will never be any late submission for any assignment even by one minute.\n\t\\item All submissions should be handwritten and scanned as a single PDF file of each assignment.\n\t\\item All assignments should be submitted through the course site. Any other form of submission, such as email or physical copies, will not be accepted.\n\\end{itemize}\nAny form of academic dishonesty, including plagiarism or unauthorized collaboration, will be subject to the university!\u02bcs academic integrity policies.',
+  },
+  'participation grading policy': {
+    enabled: true,
+    text: 'The participation component of the course grades will be based on the following criteria:\n\\begin{itemize}\n\t\\item Active participation in class discussions and activities.\n\t\\item Answering and interacting with questions posed by the instructor.\n\t\\item Improving the learning experience for instructors and students by indicating typos, mistakes, missing information, or unclear instructions in the course materials, and providing suggestions for improvement.\n\t\\item Completing the formal final course evaluation at the end of the semester.\n\\end{itemize}\nThe instructor reserves the right to adjust the participation grading scheme, participation question difficulty, or assessment methods if necessary, and students will be informed of any changes in a timely manner.',
+  },
+  'bonus grading policy': {
+    enabled: true,
+    text: 'The bonus component of the course grades will be based on the following criteria:\n\\begin{itemize}\n\t\\item Answering challenge questions posed by the instructor during the class or take-home questions.\n\t\\item Each quiz, midterm, and final exam will have an extra challenge question that is not required to be answered but will be graded for bonus points if answered correctly.\n\\end{itemize}\nThe instructor reserves the right to adjust the bonus grading scheme, bonus question difficulty, or assessment methods if necessary, and students will be informed of any changes in a timely manner.',
+  },
+};
+
+const LO_COLUMNS = [
+  ['exam', 'Exam'],
+  ['assignment', 'Assignment'],
+  ['activity', 'Class Activities'],
+  ['project', 'Project'],
+];
+
+// ============================================================= state
+let _seq = 1;
+const nid = () => `r${_seq++}`;
+const newLO = () => ({ id: nid(), text: '', exam: false, assignment: false, activity: false, project: false });
+const newTB = () => ({ id: nid(), image: null, title: '', author: '', publisher: '', isbn: '' });
+const newWK = () => ({ id: nid(), topic: '' });
+const newAS = () => ({ id: nid(), name: '', weight: '', due: '', los: '' });
+
+function defaultState() {
+  const policies = {};
+  POLICIES.forEach(p => policies[p.key] = { enabled: POLICY_DEFAULTS[p.key].enabled, text: POLICY_DEFAULTS[p.key].text });
+  return {
+    school_name: SCHOOL_NAME_DEFAULT, year_semester: '', course_name: '', course_code: '',
+    credits: '', prerequisites: '', classes_time: '', passing_grade: PASSING_GRADE_DEFAULT,
+    has_ta: false,
+    instructor: { name: '', email: '', room: '', office_hours: '' },
+    ta: { name: '', email: '', room: '', office_hours: '' },
+    description: '',
+    los: Array.from({ length: DEFAULT_LO_ROWS }, newLO),
+    textbooks: [newTB()],
+    weeks: Array.from({ length: DEFAULT_WEEKS }, newWK),
+    num_weeks: DEFAULT_WEEKS,
+    assessments: Array.from({ length: DEFAULT_ASMT_ROWS }, newAS),
+    policies,
+  };
+}
+
+let S = defaultState();
+let activeTab = 'courseinfo';
+const LS_KEY = 'course_outline_static_state';
+
+function loadLS() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) { S = normalizeState(JSON.parse(raw)); _seq = 1000; }
+  } catch (e) { /* ignore */ }
+}
+function saveLS() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) { /* ignore */ }
+}
+function normalizeState(o) {
+  const d = defaultState();
+  const merge = (dst, src) => { for (const k in dst) if (src && k in src) dst[k] = src[k]; return dst; };
+  ['school_name','year_semester','course_name','course_code','credits','prerequisites','classes_time','passing_grade'].forEach(k => { if (o && o[k] !== undefined) d[k] = o[k]; });
+  d.has_ta = !!(o && o.has_ta);
+  d.instructor = merge(d.instructor, (o && o.instructor) || {});
+  d.ta = merge(d.ta, (o && o.ta) || {});
+  if (o && o.description !== undefined) d.description = o.description;
+  const losFrom = (o && (o.learning_objectives || o.los)) || null;
+  d.los = Array.isArray(losFrom) ? losFrom.map(r => ({ id: nid(), text: r.text||'', exam: !!r.exam, assignment: !!r.assignment, activity: !!r.activity, project: !!r.project })) : d.los;
+  d.textbooks = Array.isArray(o && o.textbooks) ? o.textbooks.map(r => ({ id: nid(), image: (typeof r.image === 'string' && String(r.image).startsWith('data:image')) ? r.image : null, title: r.title||'', author: r.author||'', publisher: r.publisher||'', isbn: r.isbn||'' })) : d.textbooks;
+  d.weeks = Array.isArray(o && o.weeks) ? o.weeks.map(r => ({ id: nid(), topic: r.topic||'' })) : d.weeks;
+  d.assessments = Array.isArray(o && o.assessments) ? o.assessments.map(r => ({ id: nid(), name: r.name||'', weight: r.weight||'', due: r.due||'', los: r.los||'' })) : d.assessments;
+  d.num_weeks = Math.max(1, d.weeks.length);
+  if (o && o.policies) d.policies = POLICIES.reduce((acc, p) => { acc[p.key] = { enabled: !!(o.policies[p.key] && o.policies[p.key].enabled), text: (o.policies[p.key] && o.policies[p.key].text) || POLICY_DEFAULTS[p.key].text }; return acc; }, {});
+  return d;
+}
+
+// ============================================================= small helpers
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+function byId(arr, id) { return arr.find(r => r.id === id); }
+function setPath(bind, value) {
+  const p = bind.split(':');
+  const kind = p[0];
+  if (kind === 'lo') { const r = byId(S.los, +p[1]); if (r) r[p[2]] = value; }
+  else if (kind === 'tb') { const r = byId(S.textbooks, +p[1]); if (r) r[p[2]] = value; }
+  else if (kind === 'wk') { const r = byId(S.weeks, +p[1]); if (r) r[p[2]] = value; }
+  else if (kind === 'as') { const r = byId(S.assessments, +p[1]); if (r) r[p[2]] = value; }
+  else if (kind === 'pol') { const pol = S.policies[p[1]]; if (pol) pol[p[2]] = value; }
+  else {
+    const parts = bind.split('.');
+    let o = S; for (let i = 0; i < parts.length - 1; i++) o = o[parts[i]];
+    if (o) o[parts[parts.length - 1]] = value;
+  }
+  saveLS();
+}
+
+// ============================================================= render
+const TABS = [
+  ['courseinfo', 'Course Info'],
+  ['instructor', "Instructor's Contact"],
+  ['description', 'Description'],
+  ['objectives', 'Learning Objectives'],
+  ['textbooks', 'Textbooks'],
+  ['weekly', 'Weekly Schedule'],
+  ['grading', 'Grading Scheme'],
+  ['policies', 'Optional Policies'],
+];
+
+function render() {
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = TABS.map(([id, label]) =>
+    `<button class="tb ${id===activeTab?'active':''}" data-tab="${id}">${esc(label)}</button>`).join('');
+  const content = document.getElementById('content');
+  content.innerHTML = RENDERERS[activeTab]();
+  window.scrollTo(0, 0);
+}
+
+const RENDERERS = {
+  courseinfo() {
+    return `<div class="card">
+      <div class="caption">Basic course information shown in the header table of the PDF.</div>
+      <div class="field"><label>School Name</label><input data-bind="school_name" value="${esc(S.school_name)}"></div>
+      <div class="row">
+        <div class="field"><label>Year/Semester</label><input data-bind="year_semester" placeholder="e.g. Fall 2026" value="${esc(S.year_semester)}"></div>
+        <div class="field"><label class="req">Course Name</label><input data-bind="course_name" placeholder="e.g. Introduction to Data Science" value="${esc(S.course_name)}"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label class="req">Course Code</label><input data-bind="course_code" placeholder="e.g. AMS-1910" value="${esc(S.course_code)}"></div>
+        <div class="field"><label>Credits</label><input data-bind="credits" placeholder="e.g. 3" value="${esc(S.credits)}"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Pre-requisites</label><input data-bind="prerequisites" placeholder="e.g. AMS-1900" value="${esc(S.prerequisites)}"></div>
+        <div class="field"><label>Passing Grade</label><input data-bind="passing_grade" value="${esc(S.passing_grade)}"></div>
+      </div>
+      <div class="field"><label>Classes Time / Location</label><textarea data-bind="classes_time" rows="4" placeholder="e.g. Monday, 10:00 AM - 11:00 AM (B105). One line per entry.">${esc(S.classes_time)}</textarea></div>
+    </div>`;
+  },
+
+  instructor() {
+    return `<div class="card">
+      <label class="toggle"><input type="checkbox" data-bind="has_ta" ${S.has_ta?'checked':''}> This course has a Teaching Assistant (TA)</label>
+      <h3 style="margin:6px 0 10px;font-size:14px;color:#333">Instructor</h3>
+      <div class="row">
+        <div class="field"><label>Name</label><input data-bind="instructor.name" placeholder="e.g. John Doe" value="${esc(S.instructor.name)}"></div>
+        <div class="field"><label>E-mail</label><input data-bind="instructor.email" placeholder="e.g. john.doe@university.edu" value="${esc(S.instructor.email)}"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Room</label><input data-bind="instructor.room" placeholder="e.g. B105" value="${esc(S.instructor.room)}"></div>
+        <div class="field"><label>Office Hours</label><input data-bind="instructor.office_hours" placeholder="e.g. Monday, 2nd slot" value="${esc(S.instructor.office_hours)}"></div>
+      </div>
+      ${S.has_ta ? `<hr class="rule">
+      <h3 style="margin:0 0 10px;font-size:14px;color:#333">Teaching Assistant</h3>
+      <div class="row">
+        <div class="field"><label>Name</label><input data-bind="ta.name" placeholder="e.g. Jane Smith" value="${esc(S.ta.name)}"></div>
+        <div class="field"><label>E-mail</label><input data-bind="ta.email" placeholder="e.g. jane.smith@university.edu" value="${esc(S.ta.email)}"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Room</label><input data-bind="ta.room" placeholder="e.g. B105" value="${esc(S.ta.room)}"></div>
+        <div class="field"><label>Office Hours</label><input data-bind="ta.office_hours" value="${esc(S.ta.office_hours)}"></div>
+      </div>` : ''}
+    </div>`;
+  },
+
+  description() {
+    return `<div class="card">
+      <div class="caption">Enter the course description here as per the UPEI course catalogue. One paragraph; blank lines become line breaks.</div>
+      <div class="field"><textarea data-bind="description" rows="14">${esc(S.description)}</textarea></div>
+    </div>`;
+  },
+
+  objectives() {
+    const rows = S.los.map((lo, i) => `<div class="rowblock">
+      <div class="lbl">LO ${i + 1}</div>
+      <div class="field"><input data-bind="lo:${lo.id}:text" placeholder="Learning objective" value="${esc(lo.text)}"></div>
+      <button class="delbtn" data-action="rm_lo:${lo.id}" ${S.los.length===1?'disabled':''}>Remove</button>
+    </div>`).join('');
+    const gridHead = `<div class="gridhead"><span style="flex:1">Objective</span>${LO_COLUMNS.map(([,l]) => `<span style="flex:1.2">${esc(l)}</span>`).join('')}</div>`;
+    const matrix = S.los.map((lo, i) => `<div class="row" style="align-items:center;gap:8px;margin-bottom:6px">
+      <span style="flex:1;font-size:13px;font-weight:600">LO ${i + 1}</span>
+      ${LO_COLUMNS.map(([f]) => `<span style="flex:1.2" class="checkrow"><input type="checkbox" data-bind="lo:${lo.id}:${f}" ${lo[f]?'checked':''}></span>`).join('')}
+    </div>`).join('');
+    return `<div class="card">
+      <div class="caption">One learning objective per row. Empty rows are dropped from the PDF.</div>
+      ${rows}
+      <div><button class="minibtn" data-action="add_lo">+ Add learning objective</button></div>
+      <hr class="rule">
+      <h3 style="font-size:15px;margin:0 0 4px">Assessment of Learning Objectives</h3>
+      <div class="caption">Check the assessment methods used for each learning objective. If the course has no projects, leave the 'Project' column unchecked.</div>
+      ${gridHead}${matrix}
+    </div>`;
+  },
+
+  textbooks() {
+    const rows = S.textbooks.map((tb) => `<div class="rowblock">
+      <div class="lbl">Textbook</div>
+      <div class="coverbox">
+        <div class="preview">${tb.image ? `<img src="${tb.image}">` : ''}</div>
+        <div class="uploads" style="flex:1">
+          <label class="minibtn" style="margin-top:0">${tb.image ? 'Replace cover' : 'Upload cover (png/jpg)'}<input type="file" accept="image/png,image/jpeg" data-upload="tb:${tb.id}" style="display:none"></label>
+          <div class="field"><input data-bind="tb:${tb.id}:title" placeholder="Title * — e.g., Introduction to Linear Algebra" value="${esc(tb.title)}"></div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <div class="field"><label>Author</label><input data-bind="tb:${tb.id}:author" placeholder="e.g. Jane Smith" value="${esc(tb.author)}"></div>
+        <div class="field"><label>Publisher</label><input data-bind="tb:${tb.id}:publisher" placeholder="e.g. Academic Press" value="${esc(tb.publisher)}"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>ISBN-13</label><input data-bind="tb:${tb.id}:isbn" placeholder="e.g. 978-0123456789" value="${esc(tb.isbn)}"></div>
+      </div>
+      <button class="delbtn" data-action="rm_tb:${tb.id}" ${S.textbooks.length===1?'disabled':''}>Remove</button>
+    </div>`).join('');
+    return `<div class="card">
+      <div class="caption">At least one textbook row is required. The title is required; other fields are optional. Empty rows are dropped from the PDF.</div>
+      ${rows}
+      <div><button class="minibtn" data-action="add_tb">+ Add textbook</button></div>
+    </div>`;
+  },
+
+  weekly() {
+    const rows = S.weeks.map((w, i) => `<div class="rowblock">
+      <div class="lbl">Week ${i + 1}</div>
+      <div class="field"><textarea data-bind="wk:${w.id}:topic" rows="2" placeholder="e.g. Chapter 1: Matrices and Determinants">${esc(w.topic)}</textarea></div>
+      <button class="delbtn" data-action="rm_wk:${w.id}" ${S.weeks.length===1?'disabled':''}>Remove</button>
+    </div>`).join('');
+    return `<div class="card">
+      <div class="caption">Set the number of weeks, or add/remove rows manually. Empty rows are dropped and weeks renumbered in the PDF.</div>
+      <div class="row">
+        <div class="field" style="max-width:220px"><label>Number of weeks</label><input type="number" min="1" max="30" data-bind="num_weeks" data-sync="weeks" value="${Number(S.num_weeks)}"></div>
+      </div>
+      ${rows}
+      <div><button class="minibtn" data-action="add_wk">+ Add week</button></div>
+    </div>`;
+  },
+
+  grading() {
+    const header = ['Assessment', 'Weight', 'Due', 'LOs Assessed'].map(h => `<span style="flex:1.2;font-size:12.5px;font-weight:600">${esc(h)}</span>`).join('');
+    const rows = S.assessments.map((a) => `<div class="row" style="align-items:center;gap:8px;margin-bottom:10px">
+      <span style="flex:1.2"><input data-bind="as:${a.id}:name" placeholder="e.g. Assignments (4), Midterm, Final Exam" value="${esc(a.name)}"></span>
+      <span style="flex:1.2"><input data-bind="as:${a.id}:weight" placeholder="e.g. 30%" value="${esc(a.weight)}"></span>
+      <span style="flex:1.2"><input data-bind="as:${a.id}:due" placeholder="e.g. 2026-09-15" value="${esc(a.due)}"></span>
+      <span style="flex:1.2"><input data-bind="as:${a.id}:los" placeholder="e.g. LO1, LO2, LO3" value="${esc(a.los)}"></span>
+      <div style="flex:0 0 auto"><button class="delbtn" data-action="rm_as:${a.id}" ${S.assessments.length===1?'disabled':''}>Remove</button></div>
+    </div>`).join('');
+    return `<div class="card">
+      <div class="caption">Order rows by weight. No weight-sum validation is applied.</div>
+      <div class="gridhead" style="gap:16px">${header}</div>
+      ${rows}
+      <div style="margin-top:6px"><button class="minibtn" data-action="add_as">+ Add assessment row</button></div>
+    </div>`;
+  },
+
+  policies() {
+    return `<div class="card pols">${POLICIES.map(p => {
+      const pol = S.policies[p.key];
+      return `<div class="polcard">
+        <h3>${esc(p.title)}</h3>
+        <div class="polrow"><input type="checkbox" data-bind="pol:${p.key}:enabled" ${pol.enabled?'checked':''}> Include this section in the PDF</div>
+        <div class="field"><textarea data-bind="pol:${p.key}:text" rows="8">${esc(pol.text)}</textarea></div>
+        <div class="caption" style="margin-top:6px">Plain text. Lines starting with "\item", "-" or "*" render as bullets.</div>
+      </div>`;
+    }).join('')}</div>`;
+  },
+};
+
+// ============================================================= actions
+document.addEventListener('input', e => {
+  const el = e.target.closest('[data-bind]');
+  if (!el) return;
+  if (el.type === 'checkbox' && e.type === 'input') return;
+  let v = el.type === 'checkbox' ? el.checked : el.value;
+  setPath(el.dataset.bind, v);
+  if (el.dataset.sync === 'weeks') syncWeeks(Number(el.value) || 1);
+});
+document.addEventListener('change', e => {
+  const el = e.target.closest('[data-bind]');
+  if (el && el.type === 'checkbox') {
+    setPath(el.dataset.bind, el.checked);
+    if (el.dataset.bind === 'has_ta') render();
+    return;
+  }
+  const up = e.target.closest('[data-upload]');
+  if (up && up.files && up.files[0]) {
+    const file = up.files[0];
+    const parts = up.dataset.upload.split(':');
+    const reader = new FileReader();
+    reader.onload = () => {
+      const row = byId(S.textbooks, +parts[1]);
+      if (row) { row.image = reader.result; saveLS(); render(); }
+    };
+    reader.readAsDataURL(file);
+  }
+});
+document.addEventListener('click', e => {
+  const btn = e.target.closest('[data-tab]');
+  if (btn) { activeTab = btn.dataset.tab; render(); return; }
+  const act = e.target.closest('[data-action]');
+  if (!act) return;
+  const [name, id] = act.dataset.action.split(':');
+  switch (name) {
+    case 'add_lo': S.los.push(newLO()); saveLS(); render(); break;
+    case 'rm_lo': if (S.los.length > 1) { S.los = S.los.filter(r => r.id !== id); saveLS(); render(); } break;
+    case 'add_tb': S.textbooks.push(newTB()); saveLS(); render(); break;
+    case 'rm_tb': if (S.textbooks.length > 1) { S.textbooks = S.textbooks.filter(r => r.id !== id); saveLS(); render(); } break;
+    case 'add_wk': S.weeks.push(newWK()); S.num_weeks = S.weeks.length; saveLS(); render(); break;
+    case 'rm_wk': if (S.weeks.length > 1) { S.weeks = S.weeks.filter(r => r.id !== id); S.num_weeks = S.weeks.length; saveLS(); render(); } break;
+    case 'add_as': S.assessments.push(newAS()); saveLS(); render(); break;
+    case 'rm_as': if (S.assessments.length > 1) { S.assessments = S.assessments.filter(r => r.id !== id); saveLS(); render(); } break;
+  }
+});
+function syncWeeks(target) {
+  target = Math.max(1, Math.min(30, Math.round(target)));
+  while (S.weeks.length < target) S.weeks.push(newWK());
+  if (S.weeks.length > target) S.weeks = S.weeks.slice(0, target);
+  S.num_weeks = S.weeks.length;
+  saveLS();
+  render();
+}
+
+// sidebar buttons
+document.getElementById('genBtn').addEventListener('click', generate);
+document.getElementById('saveBtn').addEventListener('click', saveJSON);
+document.getElementById('loadBtn').addEventListener('click', () => document.getElementById('loadFile').click());
+document.getElementById('loadFile').addEventListener('change', loadJSON);
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (confirm('Clear all data and start over?')) {
+    try { localStorage.removeItem(LS_KEY); } catch (e) {}
+    S = defaultState(); render();
+    setMsg('', '');
+  }
+});
+
+function setMsg(text, kind) {
+  const m = document.getElementById('msg');
+  m.textContent = text || '';
+  m.className = 'msg ' + (kind || '');
+}
+
+// ============================================================= collect / validate
+function collect() {
+  const data = {
+    school_name: S.school_name, year_semester: S.year_semester, course_name: S.course_name,
+    course_code: S.course_code, credits: S.credits, prerequisites: S.prerequisites,
+    classes_time: S.classes_time, passing_grade: S.passing_grade,
+    has_ta: !!S.has_ta,
+    instructor: { ...S.instructor },
+    ta: { ...S.ta },
+    description: S.description,
+  };
+  data.learning_objectives = S.los.filter(r => r.text && r.text.trim())
+    .map(r => ({ text: r.text, exam: !!r.exam, assignment: !!r.assignment, activity: !!r.activity, project: !!r.project }));
+  data.textbooks = S.textbooks.filter(r => r.title && r.title.trim())
+    .map(r => ({ image: r.image || 'default', title: r.title, author: r.author, publisher: r.publisher, isbn: r.isbn }));
+  data.weeks = S.weeks.filter(r => r.topic && r.topic.trim())
+    .map((r, i) => ({ num: i + 1, topic: r.topic }));
+  data.assessments = S.assessments.filter(r => r.name && r.name.trim())
+    .map(r => ({ name: r.name, weight: r.weight, due: r.due, los: r.los }));
+  data.policies = {};
+  POLICIES.forEach(p => data.policies[p.key] = { enabled: !!S.policies[p.key].enabled, text: S.policies[p.key].text });
+  return data;
+}
+function missingFields() {
+  const m = [];
+  if (!(S.course_name || '').trim()) m.push('Course Name');
+  if (!(S.course_code || '').trim()) m.push('Course Code');
+  if (!(S.instructor.name || '').trim()) m.push('Instructor Name');
+  return m;
+}
+
+// ============================================================= PDF builder
+function checkMark() {
+  const c = document.createElement('canvas');
+  c.width = 36; c.height = 36;
+  const g = c.getContext('2d');
+  g.strokeStyle = '#000'; g.lineWidth = 5; g.lineCap = 'round'; g.lineJoin = 'round';
+  g.beginPath(); g.moveTo(7, 19); g.lineTo(15, 27); g.lineTo(29, 10); g.stroke();
+  return c.toDataURL('image/png');
+}
+const CHECK = checkMark();
+const GRAY = '#F0F0F0';
+const GRAYBG = '#D0D0D0';
+const HDR_CLR = '#F0F0F0';
+
+const gridLayout = {
+  hLineWidth: () => 0.5, vLineWidth: () => 0.5,
+  hLineColor: () => '#000', vLineColor: () => '#000',
+  paddingLeft: () => 4, paddingRight: () => 4, paddingTop: () => 3, paddingBottom: () => 3,
+};
+
+function pw(text, o) { return { text, ...o }; }
+function sec(text, pageBreak) { return { text, style: 'section', ...(pageBreak ? { pageBreak: 'before' } : {}) }; }
+function LOs(data) {
+  return data.learning_objectives.map((lo, i) => ({
+    columns: [
+      { text: `LO(${i + 1})`, bold: true, width: 60 },
+      { text: lo.text, width: 320, margin: [0, 0, 0, 8] },
+    ],
+    columnGap: 6,
+  }));
+}
+function policyBlocks(text) {
+  let t = String(text || '')
+    .replace(/\\begin\{itemize\}/g, '\n[B]\n')
+    .replace(/\\end\{itemize\}/g, '\n[/B]')
+    .replace(/\\item\s*/g, '\n[I]');
+  const items = [];
+  const paras = [];
+  t.split(/\r?\n/).map(s => s.replace(/\t/g, ' ').trim()).filter(s => s.length).forEach(line => {
+    if (line === '[B]') { items.push({ ul: [] }); paras.push({ type: 'bullets' }); }
+    else if (line === '[/B]') { /* close */ }
+    else if (line.startsWith('[I]')) {
+      let last = paras[paras.length - 1];
+      if (!last || last.type !== 'bullets') { items.push({ ul: [] }); paras.push({ type: 'bullets' }); }
+      items[items.length - 1].ul.push(line.slice(3));
+    } else {
+      paras.push({ type: 'text', text: line });
+    }
+  });
+  const out = [];
+  let b = 0;
+  paras.forEach(p => {
+    if (p.type === 'bullets') out.push(items[b++]);
+    else out.push(p.text);
+  });
+  return out;
+}
+function buildDoc(data) {
+  const docDef = {
+    pageSize: 'A4',
+    pageMargins: [56.7, 56.7, 56.7, 56.7],
+    info: { title: `Course Outline - ${data.course_code || 'draft'}`, author: data.instructor.name },
+    defaultStyle: { fontSize: 10, font: 'Roboto' },
+    styles: {
+      section: { fontSize: 15, bold: true, color: '#000066', margin: [0, 14, 0, 6] },
+      sub: { fontSize: 11, bold: true, decoration: 'underline', margin: [0, 10, 0, 3] },
+      desc: { italics: true, margin: [0, 0, 0, 10] },
+    },
+    content: [],
+  };
+  const C = docDef.content;
+
+  // ---- first-page header (UPEI-Cairo banner + logo)
+  C.push({
+    columns: [
+      { width: '55%', stack: [
+        { text: 'UPEI-Cairo Campus', fontSize: 14 },
+        { text: '------------------------', fontSize: 16 },
+        { text: 'Course Outline', fontSize: 16, bold: true, color: '#660000' },
+      ]},
+      { width: '45%', image: LOGO_DATA, width: 196, alignment: 'right' },
+    ],
+    margin: [0, 0, 0, 28],
+  });
+
+  // ---- COURSE / CLASS INFORMATION
+  C.push(sec('COURSE / CLASS INFORMATION'));
+  C.push({
+    table: {
+      widths: [72, 180, 72, 150],
+      body: [
+        [{ text: 'School Name', bold: true, fillColor: HDR_CLR }, data.school_name, { text: 'Year/Semester', bold: true, fillColor: HDR_CLR }, data.year_semester],
+        [{ text: 'Course Name', bold: true, fillColor: HDR_CLR }, data.course_name, { text: 'Course Code', bold: true, fillColor: HDR_CLR }, data.course_code],
+        [{ text: 'Credits', bold: true, fillColor: HDR_CLR }, data.credits, { text: 'Pre-requisites', bold: true, fillColor: HDR_CLR }, data.prerequisites],
+        [{ text: 'Classes Time/\nLocation', bold: true, fillColor: HDR_CLR }, data.classes_time.split('\n').join('\n'), { text: 'Passing Grade', bold: true, fillColor: HDR_CLR }, data.passing_grade],
+      ],
+    },
+    layout: gridLayout,
+    margin: [0, 0, 0, 14],
+  });
+
+  // ---- INSTRUCTOR CONTACT
+  C.push(sec('INSTRUCTOR CONTACT INFORMATION'));
+  const cellPair = (k, v) => [{ text: k, bold: true, fillColor: HDR_CLR }, v];
+  const instRows = [
+    ['Name', data.instructor.name],
+    ['E-mail', data.instructor.email],
+    ['Room', data.instructor.room],
+    ['Office Hours', data.instructor.office_hours],
+  ];
+  if (data.has_ta) {
+    const taOf = k => k === 'Name' ? data.ta.name : k === 'E-mail' ? data.ta.email : k === 'Room' ? data.ta.room : data.ta.office_hours;
+    C.push({
+      table: {
+        widths: [60, 180, 180],
+        body: [
+          [
+            { text: '', fillColor: HDR_CLR },
+            { text: 'Instructor', bold: true, fillColor: HDR_CLR },
+            { text: 'TA', bold: true, fillColor: HDR_CLR },
+          ],
+          ...instRows.map(([k, v]) => [{ text: k, bold: true, fillColor: HDR_CLR }, v, taOf(k)]),
+        ],
+      },
+      layout: gridLayout,
+      margin: [0, 0, 0, 14],
+    });
+  } else {
+    C.push({
+      table: {
+        widths: [60, 360],
+        body: [
+          [{ text: '', fillColor: HDR_CLR }, { text: 'Instructor', bold: true, fillColor: HDR_CLR }],
+          ...instRows.map(([k, v]) => [{ text: k, bold: true, fillColor: HDR_CLR }, v]),
+        ],
+      },
+      layout: gridLayout,
+      margin: [0, 0, 0, 14],
+    });
+  }
+
+  // ---- COURSE DESCRIPTION
+  C.push(sec('COURSE DESCRIPTION'));
+  C.push({ text: data.description, style: 'desc' });
+
+  // ---- LEARNING OBJECTIVES
+  if (data.learning_objectives.length) {
+    C.push(sec('COURSE LEARNING OBJECTIVES'));
+    C.push({ text: 'Upon successful completion of this course, students will be able to:', margin: [0, 0, 0, 8] });
+    C.push(...LOs(data));
+
+    // ---- ASSESSMENT OF LEARNING OBJECTIVES
+    C.push(sec('ASSESSMENT OF LEARNING OBJECTIVES', true));
+    C.push({ text: 'The learning objectives of this course are assessed and achieved as follows:', margin: [0, 0, 0, 8] });
+    const body = [
+      [{ text: 'Assessment Method /\nLearning Objectives', bold: true, fillColor: HDR_CLR, alignment: 'center' },
+       { text: 'Exam', bold: true, fillColor: HDR_CLR, alignment: 'center' },
+       { text: 'Assignment', bold: true, fillColor: HDR_CLR, alignment: 'center' },
+       { text: 'Class\nActivities', bold: true, fillColor: HDR_CLR, alignment: 'center' },
+       { text: 'Project', bold: true, fillColor: HDR_CLR, alignment: 'center' }],
+      ...data.learning_objectives.map((lo, i) => [
+        { text: `LO(${i + 1})`, bold: true, fillColor: HDR_CLR, alignment: 'center' },
+        ...LO_COLUMNS.map(([f]) => (lo[f] ? { image: CHECK, width: 12, alignment: 'center', margin: [0, 1, 0, 0] } : '')),
+      ]),
+    ];
+    C.push({ table: { widths: [150, 70, 70, 70, 70], body }, layout: gridLayout, margin: [0, 0, 0, 14] });
+  }
+
+  // ---- REQUIRED TEXTBOOK & COURSE MATERIAL
+  C.push(sec('REQUIRED TEXTBOOK & COURSE MATERIAL'));
+  C.push({ text: 'The following is a list of textbooks that are strongly recommended for this course:', margin: [0, 0, 0, 8] });
+  if (data.textbooks.length) {
+    const tbBody = [[
+      { text: 'Cover', bold: true, fillColor: HDR_CLR, alignment: 'center' },
+      { text: 'Details', bold: true, fillColor: HDR_CLR },
+    ], ...data.textbooks.map(tb => [
+      { image: (tb.image && String(tb.image).startsWith('data:image')) ? tb.image : COVER_DATA, fit: [50, 70], alignment: 'center' },
+      {
+        stack: [
+          { text: [{ text: 'Title: ', bold: true }, tb.title + ','] },
+          { text: [{ text: 'Author: ', bold: true }, tb.author + ','] },
+          { text: [{ text: 'Publisher: ', bold: true }, tb.publisher] },
+          { text: [{ text: 'ISBN-13: ', bold: true }, tb.isbn + '.'] },
+        ],
+      },
+    ])];
+    C.push({
+      table: { widths: [62, 360], body: tbBody },
+      layout: gridLayout,
+      margin: [0, 0, 0, 14],
+    });
+  }
+
+  // ---- COURSE SCHEDULE AND TIMELINE
+  if (data.weeks.length) {
+    C.push(sec('COURSE SCHEDULE AND TIMELINE'));
+    const schedBody = [
+      [{ text: 'Week', bold: true, fillColor: GRAYBG, alignment: 'center' }, { text: 'Topics', bold: true, fillColor: GRAYBG }],
+      ...data.weeks.map(w => [{ text: String(w.num), alignment: 'center', margin: [0, 6, 0, 6] }, { text: w.topic, margin: [0, 6, 0, 6] }]),
+    ];
+    C.push({ table: { widths: [50, 372], body: schedBody }, layout: gridLayout, margin: [0, 0, 0, 14] });
+  }
+
+  // ---- GRADING SCHEME
+  if (data.assessments.length) {
+    C.push(sec('GRADING SCHEME'));
+    C.push({ text: 'The grading scheme for this course is as follows:', margin: [0, 0, 0, 8] });
+    const body = [
+      ['Assessment', 'Weight', 'Due', 'LOs Assessed'].map(h => ({ text: h, bold: true, fillColor: HDR_CLR })),
+      ...data.assessments.map(a => [{ text: a.name, bold: true, fillColor: HDR_CLR }, a.weight, a.due, a.los]),
+    ];
+    C.push({ table: { widths: [150, 80, 100, 90], body }, layout: gridLayout, margin: [0, 0, 0, 14] });
+  }
+
+  // ---- GRADING SCALE
+  C.push(sec('GRADING SCALE'));
+  C.push({ text: 'UPEI grade scale is as follows:', margin: [0, 0, 0, 8] });
+  const SCALE = [
+    ['A+', '4.3', '91% – 100%', 'Exceptional'],
+    ['A', '4.0', '85% – 90%', 'Excellent'],
+    ['A-', '3.7', '80% – 84%', 'Extremely good'],
+    ['B+', '3.3', '77% – 79%', 'Very good'],
+    ['B', '3.0', '74% – 76%', 'Good'],
+    ['B-', '2.7', '70% – 73%', 'Fairly good'],
+    ['C+', '2.3', '67% – 69%', 'More than adequate'],
+    ['C', '2.0', '64% – 66%', 'Adequate'],
+    ['C-', '1.7', '60% – 63%', 'Minimum for good Academic standing'],
+    ['D+', '1.3', '57% – 59%', 'Below good standing'],
+    ['D', '1.0', '54% – 56%', 'Minimally acceptable'],
+    ['D-', '0.7', '50% – 53%', 'Barely acceptable'],
+    ['F', '0.0', '0% – 49%', 'Below university requirements'],
+  ];
+  C.push({
+    table: {
+      widths: [45, 40, 115, 220],
+      body: [
+        ['Grade', 'GP', 'Percentage Range', 'Verbal Descriptor'].map(h => ({ text: h, bold: true, fillColor: HDR_CLR })),
+        ...SCALE.map(r => [{ text: r[0], bold: true }, { text: r[1] }, { text: r[2] }, { text: r[3], italics: true }]),
+      ],
+    },
+    layout: gridLayout,
+    margin: [0, 0, 0, 14],
+  });
+
+  // ---- Optional policies
+  const enabled = POLICIES.filter(p => data.policies[p.key].enabled);
+  if (enabled.length) {
+    C.push(sec(enabled[0].title, true));
+    policyBlocks(data.policies[enabled[0].key].text).forEach(b => C.push(b));
+    enabled.slice(1).forEach(p => {
+      C.push(sec(p.title));
+      policyBlocks(data.policies[p.key].text).forEach(b => C.push(b));
+    });
+  }
+
+  // ---- UPEI POLICIES AND REGULATIONS
+  C.push(sec('UPEI POLICIES AND REGULATIONS', true));
+  C.push({ text: 'Attendance and Punctuality', style: 'sub' });
+  C.push({ text: 'Students are required to attend all classes and be on time for all classes. There are no excuses for missing class. All absences are counted as time missed. This applies to all lectures, tutorials / labs and mandatory office hours for probation & Gateway students. Accordingly, students should note the following:', margin: [0, 0, 0, 4] });
+  C.push({ ul: [
+    'The instructors are not required to substitute assignments or do make-up examinations for absent students.',
+    'It is the student\u2019s responsibility to make up the class content missed in consultation with his/her instructor(s). This does not mean that the instructor will provide a substitute class for the student.',
+    'Grades can be affected by missing a class as the instructor may include class participation marks and/or in-class assignments, or pop-up quizzes as part of the assessment plan for the course.',
+    'If a student is absent for 25% or more of the class time, tutorials, labs, and/or mandatory office hours, the instructor may:',
+  ]});
+  C.push({ ul: [
+    'Advise the student to drop the course if the absences occur before the drop date for a course.',
+    'Give the student a grade of F for the course.',
+    'Give the student an Incomplete grade for the course if the absences are caused by an approved documented illness or emergency.',
+  ], margin: [16, 0, 0, 6] });
+
+  C.push({ text: 'Code of Conduct for Students', style: 'sub' });
+  C.push({ text: [{ text: 'The University of Prince Edward Island expects all students to comply with all University regulations and policies, all government laws, and any codes of ethics that govern students who are members of regulated professions. All students are strongly advised to become familiar with this code, which can be accessed at: ' }, { text: 'UofCanada Student Code of Conduct (Non-Academic).pdf', link: 'https://canwellnet.sharepoint.com/:b:/r/sites/UCEDL/IT%20Policies%20and%20Procedures/Student%20Affairs/Student%20Life%20Department/UofCanada%20Student%20Code%20of%20Conduct%20(Non-Academic).pdf?csf=1&web=1&e=molhng', color: '#0000EE' }], margin: [0, 0, 0, 8] });
+
+  C.push({ text: 'Academic Integrity', style: 'sub' });
+  C.push({ text: [{ text: 'All students are expected to conduct themselves in all aspects of this course with the highest level of academic integrity. Accordingly, academic dishonesty will not be tolerated. Regulation 20 of the University Calendar defines academic dishonesty. Where there is reasonable evidence to support an allegation of academic dishonesty, Regulation 20 will be strictly enforced. All students are strongly advised to become familiar with this Regulation and UPEI Cairo Academic Integrity policy which can be accessed at: ' }, { text: 'UPEI Cairo Academic Integrity Policy.pdf', link: 'https://canwellnet.sharepoint.com/:b:/s/UCEDL/IQAMgD2IBlyQQaMxAsuDuzvgAV2Hkq0-sevj_5zXs0cuGOc?e=4nh3b2', color: '#0000EE' }], margin: [0, 0, 0, 8] });
+
+  C.push({ text: 'Intellectual Property', style: 'sub' });
+  C.push({ text: 'The teaching materials used in this course are the intellectual property of the instructor. To avoid copyright violations, students must not share, distribute, or transmit any course materials including text files, video files, or other content to any third party without prior written permission.', margin: [0, 0, 0, 8] });
+
+  C.push({ text: 'The Use of AI', style: 'sub' });
+  C.push({ text: 'The use of generative artificial intelligence (AI) and AI-assisted technologies is permitted only upon receiving written approval from the instructor. Students should disclose in their assignments the use of AI and AI-assisted technologies in the writing process. Failure to do so will be considered academic dishonesty.', margin: [0, 0, 0, 8] });
+
+  C.push({ text: 'Student Accommodation', style: 'sub' });
+  C.push({ text: [{ text: 'The university strives to make the learning experience as accessible and inclusive as possible. If you have accessibility needs that require academic accommodation, kindly contact the student wellness department and review UPEI Cairo campus academic accommodation policy which can be accessed at: ' }, { text: 'UPEI Cairo Campus Academic Accommodations Policy.pdf', link: 'https://canwellnet.sharepoint.com/:b:/r/sites/UCEDL/IT%20Policies%20and%20Procedures/Student%20Affairs/Student%20Life%20Department/Student%20Wellness/Academic%20Accommodation/UPEI%20Cairo%20Campus%20Academic%20Accommodations%20Policy.pdf?csf=1&web=1&e=ORIgcN', color: '#0000EE' }], margin: [0, 0, 0, 8] });
+
+  // ---- TEACHING AND COMMUNICATIONS
+  C.push(sec('TEACHING AND COMMUNICATIONS'));
+  C.push({ text: [{ text: 'The time that we spend together in the classroom is vital to be able to fully understand the course material in the textbook complemented with discussion and activity in the classroom. Activities may include in-class presentations, case studies, issue discussions, simulations, and problem solving. These activities may be done either individually, as a group, or as a class. The expectation is that all students will engage their instructor and fellow students in these activities, both respectfully and professionally. Students must check the learning management system and university email regularly for confirmation on assignments and announcements. ' }, { text: 'It is YOUR responsibility to be knowledgeable of the latest developments in the course.', bold: true }], margin: [0, 0, 0, 8] });
+  C.push({ text: 'Expectations From Students', style: 'sub' });
+  C.push({ ul: [
+    'There will be no make-up exams allowed without a valid reason or clinic approval.',
+    'All reports required for this course must be original and adhere to the university\u2019s academic integrity policy. Reports will be submitted through Turnitin, which checks for similarities with other submissions and online sources. If similarity beyond a reasonable amount is detected, penalties extending to filing an academic dishonesty case may be applied.',
+    'All students are expected to submit their work on time; late submissions without prior approved excuse will not be accepted.',
+    'Students that arrive late at class after 10 minutes will not be allowed entrance and will be marked absent.',
+    'In keeping with classroom best practices for creating an engaging learning environment, all mobile phones must be turned off or on "vibrate" mode.',
+    'Once you come to class, it is expected that you will be there to stay. Please make sure you use the washroom before or after class.',
+    'All students agree to abide by the following professional standards:',
+  ]});
+  C.push({ ul: [
+    'Come to class on time and be prepared.',
+    'If unable to attend class, contact instructor/students before the class.',
+    'Be considerate and respectful of others\u2019 time, opinions, and rights.',
+    'Attend to what is happening in class \u2014 do not text/surf/use cell phone or use electronic devices for non-class purposes.',
+    'Seek and provide feedback to/from peers and instructor.',
+    'Commit to the highest standards of competence and academic integrity (work completed on time, motivated, dress appropriately etc.).',
+    'Contribute to teamwork in a fair and balanced manner.',
+  ], margin: [16, 0, 0, 8] });
+
+  C.push({ text: 'WHILE EVERY EFFORT WILL BE MADE TO FOLLOW THE SCHEDULE, THE GRADING SCHEME AND THE ASSESSMENT DATE PLEASE NOTE THAT UNFORESEEN CIRCUMSTANCES CAN LEAD TO SOME CHANGES.', bold: true, italics: true, alignment: 'center', margin: [0, 18, 0, 0] });
+
+  return docDef;
+}
+
+// ============================================================= generate / save / load
+function generate() {
+  const missing = missingFields();
+  if (missing.length) {
+    setMsg('Required fields missing: ' + missing.join(', '), 'err');
+    return;
+  }
+  const data = collect();
+  const code = (data.course_code || 'draft').replace(/[/\\]/g, '-');
+  const docDef = buildDoc(data);
+  try {
+    pdfMake.createPdf(docDef).download(`Course Outline - ${code}.pdf`);
+    setMsg('Compiled successfully in your browser.', 'ok');
+  } catch (e) {
+    setMsg('Error generating PDF: ' + e.message, 'err');
+  }
+}
+function saveJSON() {
+  const data = collect();
+  const code = (data.course_code || 'outline').replace(/[/\\]/g, '-');
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `course-outline-${code}.json`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 100);
+}
+function loadJSON(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      S = normalizeState(data);
+      saveLS();
+      render();
+      setMsg('JSON loaded.', 'ok');
+    } catch (err) {
+      setMsg('Could not read JSON: ' + err.message, 'err');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ============================================================= font setup + boot
+pdfMake.fonts = {
+  Roboto: {
+    normal: 'Roboto-Regular.ttf',
+    bold: 'Roboto-Medium.ttf',
+    italics: 'Roboto-Italic.ttf',
+    bolditalics: 'Roboto-MediumItalic.ttf',
+  },
+};
+loadLS();
+render();
+</script>
+</body>
+</html>

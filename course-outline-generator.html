@@ -9,7 +9,7 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#f4f5f7;}
 .layout{display:flex;min-height:100vh}
-.sidebar{width:300px;flex:0 0 300px;background:#2b2b33;color:#fff;padding:20px 18px;}
+.sidebar{width:250px;flex:0 0 250px;background:#2b2b33;color:#fff;padding:20px 18px;}
 .sidebar h1{font-size:20px;margin:0 0 4px;color:#fff;line-height:1.2}
 .sidebar .cap{font-size:12px;color:#b8b8c2;margin-bottom:22px}
 .sidebar .hd{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#9a9aa6;margin:20px 0 8px}
@@ -21,7 +21,7 @@ body{margin:0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var
 .sidebar .msg.ok{color:#7ef29a}
 .sidebar .msg.err{color:#ff9090}
 .sidebar .note{font-size:11px;color:#8f8f9b;margin-top:24px;line-height:1.5}
-.main{flex:1;padding:0 48px 60px;min-width:0}
+.main{flex:1;padding:0 32px 60px;min-width:0}
 .tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid #ddd;margin-bottom:20px;position:sticky;top:0;background:#f4f5f7;z-index:5}
 .tabs .tb{padding:12px 16px;background:none;border:none;font-size:14px;cursor:pointer;color:var(--mut);border-bottom:3px solid transparent}
 .tabs .tb:hover{color:var(--ink)}
@@ -29,11 +29,12 @@ body{margin:0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var
 .card{background:#fff;border:1px solid #e3e4e8;border-radius:8px;padding:22px 24px;max-width:1560px}
 .card.caption{font-size:12px;color:var(--mut);margin-top:-10px;margin-bottom:18px}
 .row{display:flex;gap:16px;margin:0 0 14px;flex-wrap:wrap}
-.field{flex:1;min-width:200px}
+.field{flex:1 1 260px;min-width:260px}
 .field label{display:block;font-size:12.5px;font-weight:600;color:#333;margin:0 0 5px}
 .field input[type=text],.field input[type=number]{width:100%;padding:8px 10px;border:1px solid #c9ccd2;border-radius:6px;font-size:14px}
 .field textarea{width:100%;padding:8px 10px;border:1px solid #c9ccd2;border-radius:6px;font-size:14px;resize:vertical}
 .field input:focus,.field textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,16,46,.12)}
+.field input::placeholder,.field textarea::placeholder{font-size:12.5px;color:#8b8b95}
 .req::after{content:' *';color:var(--accent)}
 .toggle{display:flex;align-items:center;gap:10px;margin:6px 0 16px;cursor:pointer;font-size:14px}
 .toggle input{width:18px;height:18px;accent-color:var(--accent)}
@@ -358,10 +359,10 @@ const RENDERERS = {
   grading() {
     const header = ['Assessment', 'Weight', 'Due', 'LOs Assessed'].map(h => `<span style="flex:1.2;font-size:12.5px;font-weight:600">${esc(h)}</span>`).join('');
     const rows = S.assessments.map((a) => `<div class="row" style="align-items:center;gap:8px;margin-bottom:10px">
-      <span style="flex:1.2"><input data-bind="as:${a.id}:name" placeholder="e.g. Assignments (4), Midterm, Final Exam" value="${esc(a.name)}"></span>
-      <span style="flex:1.2"><input data-bind="as:${a.id}:weight" placeholder="e.g. 30%" value="${esc(a.weight)}"></span>
-      <span style="flex:1.2"><input data-bind="as:${a.id}:due" placeholder="e.g. 2026-09-15" value="${esc(a.due)}"></span>
-      <span style="flex:1.2"><input data-bind="as:${a.id}:los" placeholder="e.g. LO1, LO2, LO3" value="${esc(a.los)}"></span>
+      <span style="flex:1.2 1 220px;min-width:220px"><input data-bind="as:${a.id}:name" placeholder="e.g. Assignments (4), Midterm, Final Exam" value="${esc(a.name)}"></span>
+      <span style="flex:1.2 1 220px;min-width:220px"><input data-bind="as:${a.id}:weight" placeholder="e.g. 30%" value="${esc(a.weight)}"></span>
+      <span style="flex:1.2 1 220px;min-width:220px"><input data-bind="as:${a.id}:due" placeholder="e.g. 2026-09-15" value="${esc(a.due)}"></span>
+      <span style="flex:1.2 1 220px;min-width:220px"><input data-bind="as:${a.id}:los" placeholder="e.g. LO1, LO2, LO3" value="${esc(a.los)}"></span>
       <div style="flex:0 0 auto"><button class="delbtn" data-action="rm_as:${a.id}" ${S.assessments.length===1?'disabled':''}>Remove</button></div>
     </div>`).join('');
     return `<div class="card">
@@ -403,16 +404,32 @@ document.addEventListener('change', e => {
   }
   const up = e.target.closest('[data-upload]');
   if (up && up.files && up.files[0]) {
-    const file = up.files[0];
     const parts = up.dataset.upload.split(':');
-    const reader = new FileReader();
-    reader.onload = () => {
+    scaleImage(up.files[0], 480, 640, b64 => {
+      if (!b64) { setMsg('Could not read that image.', 'err'); return; }
       const row = byId(S.textbooks, parts[1]);
-      if (row) { row.image = reader.result; saveLS(); render(); }
-    };
-    reader.readAsDataURL(file);
+      if (row) { row.image = b64; saveLS(); render(); }
+    });
   }
 });
+function scaleImage(file, maxW, maxH, cb) {
+  const img = new Image();
+  img.onload = () => {
+    let w = img.width, h = img.height;
+    const k = Math.min(1, maxW / w, maxH / h);
+    if (k < 1) { w = Math.round(w * k); h = Math.round(h * k); }
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, w); c.height = Math.max(1, h);
+    const g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    g.drawImage(img, 0, 0, c.width, c.height);
+    cb(c.toDataURL('image/jpeg', 0.8));
+  };
+  img.onerror = () => cb(null);
+  const reader = new FileReader();
+  reader.onload = () => { img.src = reader.result; };
+  reader.readAsDataURL(file);
+}
 document.addEventListener('click', e => {
   const btn = e.target.closest('[data-tab]');
   if (btn) { activeTab = btn.dataset.tab; render(); return; }

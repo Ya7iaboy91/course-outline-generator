@@ -368,8 +368,8 @@ const RENDERERS = {
       
       <hr class="rule">
       <div style="margin-bottom:12px">
-        <label style="display:block; font-size:14px; font-weight:600; color:#333; margin-bottom:6px" class="req">Classes Time / Location Grid</label>
-        <div class="caption" style="margin-bottom:12px">At least 1 row must be completed in the grid. Select a Day, Slot, and enter Classroom.</div>
+        <label style="display:block; font-size:14px; font-weight:600; color:#333; margin-bottom:6px" class="req">Classes Time / Location</label>
+        <div class="caption" style="margin-bottom:12px">At least 1 row must be completed.</div>
         <div class="gridhead" style="align-items:center; gap:12px; margin-bottom:6px">
           <span style="flex:1; min-width:80px">Lecture #</span>
           <span style="flex:2; min-width:140px">Day</span>
@@ -467,7 +467,7 @@ const RENDERERS = {
       </div>
       <div class="row" style="margin-top:12px">
         <div class="field"><label class="req">Title</label><input data-bind="tb:${tb.id}:title" placeholder="Introduction to Linear Algebra" value="${esc(tb.title)}"></div>
-        <div class="field"><label>Authors</label><input data-bind="tb:${tb.id}:author" placeholder="Jane Smith" value="${esc(tb.author)}"></div>
+        <div class="field"><label>Author(s)</label><input data-bind="tb:${tb.id}:author" placeholder="Jane Smith" value="${esc(tb.author)}"></div>
       </div>
       <div class="row">
         <div class="field"><label>Publisher</label><input data-bind="tb:${tb.id}:publisher" placeholder="Academic Press" value="${esc(tb.publisher)}"></div>

@@ -122,19 +122,13 @@ const POLICY_DEFAULTS = {
   },
 };
 
-const LO_COLUMNS = [
-  ['exam', 'Exam'],
-  ['assignment', 'Assignment'],
-  ['activity', 'Class Activities'],
-  ['project', 'Project'],
-];
-
 // ============================================================= state
 let _seq = 1;
 const nid = () => `r${_seq++}`;
+const newLectureRow = (name) => ({ id: nid(), name: name || 'Lecture', day: '', slot: '', classroom: '' });
 const newLO = () => ({ id: nid(), text: '', exam: false, assignment: false, activity: false, project: false });
 const newTB = () => ({ id: nid(), image: null, title: '', author: '', publisher: '', isbn: '' });
-const newWK = () => ({ id: nid(), topic: '' });
+const newWK = () => ({ id: nid(), topic: '', reading: '' });
 const newAS = () => ({ id: nid(), name: '', weight: '', due: '', los: '' });
 
 function defaultState() {
@@ -147,18 +141,29 @@ function defaultState() {
     course_code: '',
     credits: '', 
     prerequisites: '', 
-    classes_time: '', 
+    classes_grid: [
+      { id: nid(), name: 'Lecture 1', day: '', slot: '', classroom: '' },
+      { id: nid(), name: 'Lecture 2', day: '', slot: '', classroom: '' },
+      { id: nid(), name: 'Lecture 3', day: '', slot: '', classroom: '' }
+    ],
     passing_grade: PASSING_GRADE_DEFAULT,
     has_ta: false,
     instructor: { name: '', email: '', room: '', office_hours: '' },
     ta: { name: '', email: '', room: '', office_hours: '' },
     description: '',
+    lo_columns: [
+      { key: 'exam', label: 'Exams' },
+      { key: 'assignment', label: 'Assignments' },
+      { key: 'activity', label: 'Class Activities' },
+      { key: 'project', label: 'Projects' }
+    ],
     los: Array.from({ length: DEFAULT_LO_ROWS }, newLO),
     textbooks: [newTB()],
     weeks: Array.from({ length: DEFAULT_WEEKS }, newWK),
     num_weeks: DEFAULT_WEEKS,
     assessments: Array.from({ length: DEFAULT_ASMT_ROWS }, newAS),
     policies,
+    bonus_5_marks: false,
   };
 }
 
@@ -216,17 +221,46 @@ function saveLS() {
 function normalizeState(o) {
   const d = defaultState();
   const merge = (dst, src) => { for (const k in dst) if (src && k in src) dst[k] = src[k]; return dst; };
-  ['school_name','year_semester','course_name','course_code','credits','prerequisites','classes_time','passing_grade'].forEach(k => { if (o && o[k] !== undefined) d[k] = o[k]; });
+  ['school_name','year_semester','course_name','course_code','credits','prerequisites','passing_grade'].forEach(k => { if (o && o[k] !== undefined) d[k] = o[k]; });
   d.has_ta = !!(o && o.has_ta);
   d.instructor = merge(d.instructor, (o && o.instructor) || {});
   d.ta = merge(d.ta, (o && o.ta) || {});
   if (o && o.description !== undefined) d.description = o.description;
+
+  d.classes_grid = Array.isArray(o && o.classes_grid) ? o.classes_grid.map((r, i) => ({
+    id: nid(),
+    name: r.name || `Lecture ${i + 1}`,
+    day: r.day || '',
+    slot: r.slot || '',
+    classroom: r.classroom || ''
+  })) : d.classes_grid;
+
+  d.lo_columns = Array.isArray(o && o.lo_columns) ? o.lo_columns.map(c => ({
+    key: c.key || nid(),
+    label: c.label || ''
+  })) : d.lo_columns;
+
   const losFrom = (o && (o.learning_objectives || o.los)) || null;
-  d.los = Array.isArray(losFrom) ? losFrom.map(r => ({ id: nid(), text: r.text||'', exam: !!r.exam, assignment: !!r.assignment, activity: !!r.activity, project: !!r.project })) : d.los;
+  d.los = Array.isArray(losFrom) ? losFrom.map(r => {
+    const loObj = { id: nid(), text: r.text||'' };
+    for (const k in r) {
+      if (k !== 'id' && k !== 'text') {
+        loObj[k] = !!r[k];
+      }
+    }
+    d.lo_columns.forEach(col => {
+      if (loObj[col.key] === undefined) {
+        loObj[col.key] = !!r[col.key];
+      }
+    });
+    return loObj;
+  }) : d.los;
+
   d.textbooks = Array.isArray(o && o.textbooks) ? o.textbooks.map(r => ({ id: nid(), image: (typeof r.image === 'string' && String(r.image).startsWith('data:image')) ? r.image : null, title: r.title||'', author: r.author||'', publisher: r.publisher||'', isbn: r.isbn||'' })) : d.textbooks;
-  d.weeks = Array.isArray(o && o.weeks) ? o.weeks.map(r => ({ id: nid(), topic: r.topic||'' })) : d.weeks;
+  d.weeks = Array.isArray(o && o.weeks) ? o.weeks.map(r => ({ id: nid(), topic: r.topic||'', reading: r.reading||'' })) : d.weeks;
   d.assessments = Array.isArray(o && o.assessments) ? o.assessments.map(r => ({ id: nid(), name: r.name||'', weight: r.weight||'', due: r.due||'', los: r.los||'' })) : d.assessments;
   d.num_weeks = Math.max(1, d.weeks.length);
+  d.bonus_5_marks = !!(o && o.bonus_5_marks);
   if (o && o.policies) d.policies = POLICIES.reduce((acc, p) => { acc[p.key] = { enabled: !!(o.policies[p.key] && o.policies[p.key].enabled), text: (o.policies[p.key] && o.policies[p.key].text) || POLICY_DEFAULTS[p.key].text }; return acc; }, {});
   return d;
 }
@@ -241,6 +275,8 @@ function setPath(bind, value) {
   else if (kind === 'tb') { const r = byId(S.textbooks, p[1]); if (r) r[p[2]] = value; }
   else if (kind === 'wk') { const r = byId(S.weeks, p[1]); if (r) r[p[2]] = value; }
   else if (kind === 'as') { const r = byId(S.assessments, p[1]); if (r) r[p[2]] = value; }
+  else if (kind === 'cg') { const r = byId(S.classes_grid, p[1]); if (r) r[p[2]] = value; }
+  else if (kind === 'loc') { const col = S.lo_columns.find(c => c.key === p[1]); if (col) col.label = value; }
   else if (kind === 'pol') { const pol = S.policies[p[1]]; if (pol) pol[p[2]] = value; }
   else {
     const parts = bind.split('.')
@@ -273,6 +309,32 @@ function render() {
 
 const RENDERERS = {
   courseinfo() {
+    const defaultDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const defaultSlots = ['1', '2', '3', '4', '5'];
+    const lectureRows = S.classes_grid.map((row, idx) => `
+      <div class="row" style="align-items:center; gap:12px; margin-bottom:10px">
+        <div style="flex:1; min-width:80px; font-weight:600; font-size:13.5px">${esc(row.name)}</div>
+        <div style="flex:2; min-width:140px">
+          <select data-bind="cg:${row.id}:day" style="width:100%; padding:8px 10px; border:1px solid #c9ccd2; border-radius:6px; font-size:14px">
+            <option value="">-- Choose Day --</option>
+            ${defaultDays.map(d => `<option value="${d}" ${row.day===d?'selected':''}>${d}</option>`).join('')}
+          </select>
+        </div>
+        <div style="flex:1.5; min-width:100px">
+          <select data-bind="cg:${row.id}:slot" style="width:100%; padding:8px 10px; border:1px solid #c9ccd2; border-radius:6px; font-size:14px">
+            <option value="">-- Slot --</option>
+            ${defaultSlots.map(s => `<option value="${s}" ${row.slot===s?'selected':''}>Slot ${s}</option>`).join('')}
+          </select>
+        </div>
+        <div style="flex:2; min-width:140px">
+          <input type="text" data-bind="cg:${row.id}:classroom" value="${esc(row.classroom)}" placeholder="B105" style="width:100%; padding:8px 10px; border:1px solid #c9ccd2; border-radius:6px; font-size:14px">
+        </div>
+        <div style="flex:0 0 auto">
+          <button class="delbtn" data-action="rm_cg:${row.id}" style="padding: 4px 10px" ${S.classes_grid.length===1?'disabled':''}>&times;</button>
+        </div>
+      </div>
+    `).join('');
+
     return `<div class="card">
       <div class="caption">Course Information</div>
       <!-- Wrapped in a row for margin spacing -->
@@ -291,9 +353,22 @@ const RENDERERS = {
         <div class="field"><label class="req">Pre-requisites</label><input data-bind="prerequisites" placeholder="e.g. AMS 1900 or None" value="${esc(S.prerequisites)}"></div>
         <div class="field"><label>Passing Grade</label><input data-bind="passing_grade" value="${esc(S.passing_grade)}"></div>
       </div>
-      <!-- Wrapped in a row for consistent spacing at the bottom -->
-      <div class="row">
-        <div class="field"><label>Classes Time / Location</label><textarea data-bind="classes_time" rows="4" placeholder="e.g. Monday, 10:00 AM - 11:00 AM (B105). One line per entry.">${esc(S.classes_time)}</textarea></div>
+      
+      <hr class="rule">
+      <div style="margin-bottom:12px">
+        <label style="display:block; font-size:14px; font-weight:600; color:#333; margin-bottom:6px" class="req">Classes Time / Location Grid</label>
+        <div class="caption" style="margin-bottom:12px">At least 1 row must be completed in the grid. Select a Day, Slot, and enter Classroom.</div>
+        <div class="gridhead" style="align-items:center; gap:12px; margin-bottom:6px">
+          <span style="flex:1; min-width:80px">Lecture #</span>
+          <span style="flex:2; min-width:140px">Day</span>
+          <span style="flex:1.5; min-width:100px">Slot</span>
+          <span style="flex:2; min-width:140px">Classroom</span>
+          <span style="flex:0 0 auto; width:36px"></span>
+        </div>
+        ${lectureRows}
+        <div style="margin-top:10px">
+          <button class="minibtn" data-action="add_cg" style="margin-top:0">+ Add Lecture Row</button>
+        </div>
       </div>
     </div>`;
   },
@@ -332,21 +407,39 @@ const RENDERERS = {
   objectives() {
     const rows = S.los.map((lo, i) => `<div class="rowblock">
       <div class="lbl">LO ${i + 1}</div>
-      <div class="field"><input data-bind="lo:${lo.id}:text" placeholder="Learning objective" value="${esc(lo.text)}"></div>
-      <button class="delbtn" data-action="rm_lo:${lo.id}" ${S.los.length===1?'disabled':''}>Remove</button>
+      <div class="field" style="margin-bottom:8px">
+        <textarea data-bind="lo:${lo.id}:text" placeholder="e.g. Apply single-variable and multivariable calculus techniques to find extrema" rows="2" style="width:100%; padding:8px 10px; border:1px solid #c9ccd2; border-radius:6px; font-size:14px; resize:vertical">${esc(lo.text)}</textarea>
+      </div>
+      <div style="text-align:right">
+        <button class="delbtn" data-action="rm_lo:${lo.id}" ${S.los.length===1?'disabled':''}>Remove</button>
+      </div>
     </div>`).join('');
-    const gridHead = `<div class="gridhead"><span style="flex:1">Objective</span>${LO_COLUMNS.map(([,l]) => `<span style="flex:1.2">${esc(l)}</span>`).join('')}</div>`;
-    const matrix = S.los.map((lo, i) => `<div class="row" style="align-items:center;gap:8px;margin-bottom:6px">
-      <span style="flex:1;font-size:13px;font-weight:600">LO ${i + 1}</span>
-      ${LO_COLUMNS.map(([f]) => `<span style="flex:1.2" class="checkrow"><input type="checkbox" data-bind="lo:${lo.id}:${f}" ${lo[f]?'checked':''}></span>`).join('')}
+
+    const gridHead = `<div class="gridhead" style="align-items:center; gap:8px">
+      <span style="flex:1; font-weight:600; font-size:13px">Objective</span>
+      ${S.lo_columns.map(col => `
+        <span style="flex:1.2; display:flex; align-items:center; gap:4px; min-width:80px">
+          <input type="text" data-bind="loc:${col.key}" value="${esc(col.label)}" style="width:100%; font-size:12px; font-weight:600; padding:4px 6px; border:1px solid #c9ccd2; border-radius:4px" placeholder="Column title">
+          <button class="delbtn" data-action="rm_loc:${col.key}" style="padding:2px 6px; font-size:11px" ${S.lo_columns.length===1?'disabled':''}>&times;</button>
+        </span>
+      `).join('')}
+    </div>`;
+
+    const matrix = S.los.map((lo, i) => `<div class="row" style="align-items:center; gap:8px; margin-bottom:6px">
+      <span style="flex:1; font-size:13px;font-weight:600">LO ${i + 1}</span>
+      ${S.lo_columns.map(col => `<span style="flex:1.2" class="checkrow"><input type="checkbox" data-bind="lo:${lo.id}:${col.key}" ${lo[col.key]?'checked':''}></span>`).join('')}
     </div>`).join('');
+
     return `<div class="card">
-      <div class="caption">Insert one learning objective per row. Empty rows are dropped from the PDF.</div>
+      <div class="caption">Insert one learning objective per row. Empty rows are dropped from the PDF. The input box size is vertically resizable to accommodate longer names.</div>
       ${rows}
       <div><button class="minibtn" data-action="add_lo">+ Add learning objective</button></div>
       <hr class="rule">
-      <h3 style="font-size:15px;margin:0 0 4px">Assessment of Learning Objectives</h3>
-      <div class="caption">Check the assessment methods used for each learning objective. If the course has no projects, leave the 'Project' column unchecked.</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin:0 0 10px">
+        <h3 style="font-size:15px; margin:0">Assessment of Learning Objectives</h3>
+        <button class="minibtn" data-action="add_loc" style="margin-top:0">+ Add Assessment Column</button>
+      </div>
+      <div class="caption">Click column headers to rename assessment types (e.g., Exams, Assignments, etc.). Check the boxes to map LOs to assessments.</div>
       ${gridHead}${matrix}
     </div>`;
   },
@@ -362,7 +455,7 @@ const RENDERERS = {
       </div>
       <div class="row" style="margin-top:12px">
         <div class="field"><label class="req">Title</label><input data-bind="tb:${tb.id}:title" placeholder="Introduction to Linear Algebra" value="${esc(tb.title)}"></div>
-        <div class="field"><label>Author</label><input data-bind="tb:${tb.id}:author" placeholder="Jane Smith" value="${esc(tb.author)}"></div>
+        <div class="field"><label>Authors</label><input data-bind="tb:${tb.id}:author" placeholder="Jane Smith" value="${esc(tb.author)}"></div>
       </div>
       <div class="row">
         <div class="field"><label>Publisher</label><input data-bind="tb:${tb.id}:publisher" placeholder="Academic Press" value="${esc(tb.publisher)}"></div>
@@ -380,8 +473,13 @@ const RENDERERS = {
   weekly() {
     const rows = S.weeks.map((w, i) => `<div class="rowblock">
       <div class="lbl">Week ${i + 1}</div>
-      <div class="field"><textarea data-bind="wk:${w.id}:topic" rows="2" placeholder="e.g. Chapter 1: Matrices and Determinants">${esc(w.topic)}</textarea></div>
-      <button class="delbtn" data-action="rm_wk:${w.id}" ${S.weeks.length===1?'disabled':''}>Remove</button>
+      <div class="row" style="margin-bottom:0">
+        <div class="field"><label>Topics Covered</label><textarea data-bind="wk:${w.id}:topic" rows="2" placeholder="e.g. Chapter 1: Matrices and Determinants">${esc(w.topic)}</textarea></div>
+        <div class="field"><label>Reading Material</label><textarea data-bind="wk:${w.id}:reading" rows="2" placeholder="e.g. Section 1.1-1.3, Chapter 1">${esc(w.reading)}</textarea></div>
+      </div>
+      <div style="text-align:right; margin-top:10px">
+        <button class="delbtn" data-action="rm_wk:${w.id}" ${S.weeks.length===1?'disabled':''}>Remove</button>
+      </div>
     </div>`).join('');
     return `<div class="card">
       <div class="caption">Set the number of weeks, or add/remove rows manually. Empty rows are dropped and weeks renumbered in the PDF.</div>
@@ -394,19 +492,25 @@ const RENDERERS = {
   },
 
   grading() {
-    const header = ['Assessment', 'Weight', 'Due', 'LOs Assessed'].map(h => `<span style="flex:1.2;font-size:12.5px;font-weight:600">${esc(h)}</span>`).join('');
-    const rows = S.assessments.map((a) => `<div class="row" style="align-items:center;gap:8px;margin-bottom:10px">
-      <span style="flex:1.2 1 220px;min-width:220px"><input data-bind="as:${a.id}:name" placeholder="e.g. Assignments" value="${esc(a.name)}"></span>
-      <span style="flex:1.2 1 220px;min-width:220px"><input data-bind="as:${a.id}:weight" placeholder="e.g. 30%" value="${esc(a.weight)}"></span>
-      <span style="flex:1.2 1 220px;min-width:220px"><input data-bind="as:${a.id}:due" placeholder="e.g. 2026-09-15" value="${esc(a.due)}"></span>
-      <span style="flex:1.2 1 220px;min-width:220px"><input data-bind="as:${a.id}:los" placeholder="e.g. LO1, LO2, LO3" value="${esc(a.los)}"></span>
+    const header = ['Assessment Method', 'Weight', 'Due Date'].map(h => `<span style="flex:1.2; font-size:12.5px; font-weight:600">${esc(h)}</span>`).join('');
+    const rows = S.assessments.map((a) => `<div class="row" style="align-items:center; gap:8px; margin-bottom:10px">
+      <span style="flex:1.5; min-width:180px"><input data-bind="as:${a.id}:name" placeholder="e.g. Assignments" value="${esc(a.name)}"></span>
+      <span style="flex:1.2; min-width:140px"><input data-bind="as:${a.id}:weight" placeholder="e.g. 30%" value="${esc(a.weight)}"></span>
+      <span style="flex:1.5; min-width:180px"><input data-bind="as:${a.id}:due" placeholder="e.g. 2026-09-15" value="${esc(a.due)}"></span>
       <div style="flex:0 0 auto"><button class="delbtn" data-action="rm_as:${a.id}" ${S.assessments.length===1?'disabled':''}>Remove</button></div>
     </div>`).join('');
     return `<div class="card">
-      <div class="caption">Zoom-out for better grid view.</div>
-      <div class="gridhead" style="gap:16px">${header}</div>
+      <div class="caption">Specify the assessments that make up the final grade.</div>
+      <div class="gridhead" style="gap:16px; margin-bottom:8px">${header}</div>
       ${rows}
       <div style="margin-top:6px"><button class="minibtn" data-action="add_as">+ Add row</button></div>
+      <hr class="rule">
+      <div class="polrow">
+        <label class="toggle" style="font-weight:600; font-size:14px; color:#333; cursor:pointer">
+          <input type="checkbox" data-bind="bonus_5_marks" ${S.bonus_5_marks ? 'checked' : ''}> Add bonus 5% marks to the grading scheme
+        </label>
+      </div>
+      <div class="caption" style="margin-top:-10px">If checked, a row at the end of the grading scheme table will automatically be added in the PDF with "Bonus Marks" and 5% weightage.</div>
     </div>`;
   },
 
@@ -434,8 +538,9 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => {
   const el = e.target.closest('[data-bind]');
-  if (el && el.type === 'checkbox') {
-    setPath(el.dataset.bind, el.checked);
+  if (el) {
+    let v = el.type === 'checkbox' ? el.checked : el.value;
+    setPath(el.dataset.bind, v);
     if (el.dataset.bind === 'has_ta') render();
     return;
   }
@@ -490,6 +595,34 @@ document.addEventListener('click', e => {
     case 'rm_wk': if (S.weeks.length > 1) { S.weeks = S.weeks.filter(r => r.id !== id); S.num_weeks = S.weeks.length; saveLS(); render(); } break;
     case 'add_as': S.assessments.push(newAS()); saveLS(); render(); break;
     case 'rm_as': if (S.assessments.length > 1) { S.assessments = S.assessments.filter(r => r.id !== id); saveLS(); render(); } break;
+    case 'add_cg':
+      S.classes_grid.push(newLectureRow(`Lecture ${S.classes_grid.length + 1}`));
+      saveLS();
+      render();
+      break;
+    case 'rm_cg':
+      if (S.classes_grid.length > 1) {
+        S.classes_grid = S.classes_grid.filter(r => r.id !== id);
+        S.classes_grid.forEach((r, i) => { r.name = `Lecture ${i + 1}`; });
+        saveLS();
+        render();
+      }
+      break;
+    case 'add_loc':
+      const newKey = `col_${nid()}`;
+      S.lo_columns.push({ key: newKey, label: 'New Column' });
+      S.los.forEach(lo => lo[newKey] = false);
+      saveLS();
+      render();
+      break;
+    case 'rm_loc':
+      if (S.lo_columns.length > 1) {
+        S.lo_columns = S.lo_columns.filter(c => c.key !== id);
+        S.los.forEach(lo => delete lo[id]);
+        saveLS();
+        render();
+      }
+      break;
   }
 });
 function syncWeeks(target) {
@@ -520,23 +653,36 @@ function setMsg(text, kind) {
 
 // ============================================================= collect / validate
 function collect() {
+  const classesFormatted = S.classes_grid
+    .filter(r => r.day || r.slot || r.classroom)
+    .map(r => `${r.day || ''}, Slot(${r.slot || ''}), at (${r.classroom || ''})`)
+    .join('\n');
+
   const data = {
     school_name: S.school_name, year_semester: S.year_semester, course_name: S.course_name,
     course_code: S.course_code, credits: S.credits, prerequisites: S.prerequisites,
-    classes_time: S.classes_time, passing_grade: S.passing_grade,
+    classes_time: classesFormatted, passing_grade: S.passing_grade,
     has_ta: !!S.has_ta,
     instructor: { ...S.instructor },
     ta: { ...S.ta },
     description: S.description,
+    lo_columns: S.lo_columns.map(c => ({ key: c.key, label: c.label })),
+    bonus_5_marks: !!S.bonus_5_marks,
   };
   data.learning_objectives = S.los.filter(r => r.text && r.text.trim())
-    .map(r => ({ text: r.text, exam: !!r.exam, assignment: !!r.assignment, activity: !!r.activity, project: !!r.project }));
+    .map(r => {
+      const obj = { text: r.text };
+      S.lo_columns.forEach(col => {
+        obj[col.key] = !!r[col.key];
+      });
+      return obj;
+    });
   data.textbooks = S.textbooks.filter(r => r.title && r.title.trim())
     .map(r => ({ image: r.image || 'default', title: r.title, author: r.author, publisher: r.publisher, isbn: r.isbn }));
-  data.weeks = S.weeks.filter(r => r.topic && r.topic.trim())
-    .map((r, i) => ({ num: i + 1, topic: r.topic }));
+  data.weeks = S.weeks.filter(r => (r.topic && r.topic.trim()) || (r.reading && r.reading.trim()))
+    .map((r, i) => ({ num: i + 1, topic: r.topic || '', reading: r.reading || '' }));
   data.assessments = S.assessments.filter(r => r.name && r.name.trim())
-    .map(r => ({ name: r.name, weight: r.weight, due: r.due, los: r.los }));
+    .map(r => ({ name: r.name, weight: r.weight, due: r.due }));
   data.policies = {};
   POLICIES.forEach(p => data.policies[p.key] = { enabled: !!S.policies[p.key].enabled, text: S.policies[p.key].text });
   return data;
@@ -558,6 +704,10 @@ function missingFields() {
   if (!(S.description || '').trim()) m.push('Course Description');
   if (!S.textbooks.length || S.textbooks.some(r => !(r.title || '').trim())) {
     m.push('Textbook Title');
+  }
+  const hasFilledLecture = S.classes_grid.some(r => r.day && r.slot && r.classroom && r.classroom.trim());
+  if (!hasFilledLecture) {
+    m.push('Classes Time / Location (at least one lecture row with Day, Slot, and Classroom completed)');
   }
   return m;
 }
@@ -715,18 +865,22 @@ function buildDoc(data) {
     // ---- ASSESSMENT OF LEARNING OBJECTIVES
     C.push(sec('ASSESSMENT OF LEARNING OBJECTIVES', true));
     C.push({ text: 'The learning objectives of this course are assessed and achieved as follows:', margin: [0, 0, 0, 8] });
+    
+    const numCols = data.lo_columns.length;
+    const colWidth = 280 / numCols;
+    const tableWidths = [150, ...data.lo_columns.map(() => colWidth)];
+    
     const body = [
-      [{ text: 'Assessment Method /\nLearning Objectives', bold: true, fillColor: HDR_CLR, alignment: 'center' },
-       { text: 'Exam', bold: true, fillColor: HDR_CLR, alignment: 'center' },
-       { text: 'Assignment', bold: true, fillColor: HDR_CLR, alignment: 'center' },
-       { text: 'Class\nActivities', bold: true, fillColor: HDR_CLR, alignment: 'center' },
-       { text: 'Project', bold: true, fillColor: HDR_CLR, alignment: 'center' }],
+      [
+        { text: 'Assessment Method /\nLearning Objectives', bold: true, fillColor: HDR_CLR, alignment: 'center' },
+        ...data.lo_columns.map(col => ({ text: col.label, bold: true, fillColor: HDR_CLR, alignment: 'center' }))
+      ],
       ...data.learning_objectives.map((lo, i) => [
         { text: `LO(${i + 1})`, bold: true, fillColor: HDR_CLR, alignment: 'center' },
-        ...LO_COLUMNS.map(([f]) => (lo[f] ? { image: CHECK, width: 12, alignment: 'center', margin: [0, 1, 0, 0] } : '')),
+        ...data.lo_columns.map(col => (lo[col.key] ? { image: CHECK, width: 12, alignment: 'center', margin: [0, 1, 0, 0] } : '')),
       ]),
     ];
-    C.push({ table: { widths: [150, 70, 70, 70, 70], body }, layout: gridLayout, margin: [0, 0, 0, 14] });
+    C.push({ table: { widths: tableWidths, body }, layout: gridLayout, margin: [0, 0, 0, 14] });
   }
 
   // ---- REQUIRED TEXTBOOK & COURSE MATERIAL
@@ -741,7 +895,7 @@ function buildDoc(data) {
       {
         stack: [
           { text: [{ text: 'Title: ', bold: true }, tb.title + ','] },
-          { text: [{ text: 'Author: ', bold: true }, tb.author + ','] },
+          { text: [{ text: 'Authors: ', bold: true }, tb.author + ','] },
           { text: [{ text: 'Publisher: ', bold: true }, tb.publisher] },
           { text: [{ text: 'ISBN-13: ', bold: true }, tb.isbn + '.'] },
         ],
@@ -758,10 +912,14 @@ function buildDoc(data) {
   if (data.weeks.length) {
     C.push(sec('COURSE SCHEDULE AND TIMELINE'));
     const schedBody = [
-      [{ text: 'Week', bold: true, fillColor: GRAYBG, alignment: 'center' }, { text: 'Topics', bold: true, fillColor: GRAYBG }],
-      ...data.weeks.map(w => [{ text: String(w.num), alignment: 'center', margin: [0, 6, 0, 6] }, { text: w.topic, margin: [0, 6, 0, 6] }]),
+      [{ text: 'Week', bold: true, fillColor: GRAYBG, alignment: 'center' }, { text: 'Topics / Content', bold: true, fillColor: GRAYBG }, { text: 'Reading Material', bold: true, fillColor: GRAYBG }],
+      ...data.weeks.map(w => [
+        { text: String(w.num), alignment: 'center', margin: [0, 6, 0, 6] },
+        { text: w.topic, margin: [0, 6, 0, 6] },
+        { text: w.reading || '', margin: [0, 6, 0, 6] }
+      ]),
     ];
-    C.push({ table: { widths: [50, 372], body: schedBody }, layout: gridLayout, margin: [0, 0, 0, 14] });
+    C.push({ table: { widths: [40, 240, 142], body: schedBody }, layout: gridLayout, margin: [0, 0, 0, 14] });
   }
 
   // ---- GRADING SCHEME
@@ -769,10 +927,17 @@ function buildDoc(data) {
     C.push(sec('GRADING SCHEME'));
     C.push({ text: 'The grading scheme for this course is as follows:', margin: [0, 0, 0, 8] });
     const body = [
-      ['Assessment', 'Weight', 'Due', 'LOs Assessed'].map(h => ({ text: h, bold: true, fillColor: HDR_CLR })),
-      ...data.assessments.map(a => [{ text: a.name, bold: true, fillColor: HDR_CLR }, a.weight, a.due, a.los]),
+      ['Assessment Method', 'Weight', 'Due Date'].map(h => ({ text: h, bold: true, fillColor: HDR_CLR })),
+      ...data.assessments.map(a => [{ text: a.name, bold: true, fillColor: HDR_CLR }, a.weight, a.due]),
     ];
-    C.push({ table: { widths: [150, 80, 100, 90], body }, layout: gridLayout, margin: [0, 0, 0, 14] });
+    if (data.bonus_5_marks) {
+      body.push([
+        { text: 'Bonus Marks', bold: true, fillColor: HDR_CLR },
+        '5%',
+        'Throughout semester'
+      ]);
+    }
+    C.push({ table: { widths: [180, 100, 140], body }, layout: gridLayout, margin: [0, 0, 0, 14] });
   }
 
   // ---- GRADING SCALE

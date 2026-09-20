@@ -20,6 +20,7 @@ no LaTeX, no server needed — everything runs in the browser:
 | `assets/cover_small.jpg` | Lightweight default textbook cover (fallback when no cover uploaded). |
 | `build.ps1` | Build script: inlines everything above into the final single-file HTML. |
 | `course-outline-generator.html` | **The deliverable.** Fully self-contained; produce it via the build script. |
+| `index.html` | Same app as above, served directly at the site root (no redirect). |
 
 ## How to build
 

@@ -6,6 +6,7 @@ $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
 $src  = Join-Path $root "src\app.html"
 $out  = Join-Path $root "course-outline-generator.html"
+$index = Join-Path $root "index.html"
 
 $pdf  = Get-Content -LiteralPath (Join-Path $root "lib\pdfmake.min.js") -Raw
 $vfs  = Get-Content -LiteralPath (Join-Path $root "lib\vfs_fonts.js") -Raw
@@ -26,6 +27,8 @@ $html = $html.Replace("__COVER_B64__", $coverB64)
 $html = $html.Replace("`r`n", "`n")
 
 [IO.File]::WriteAllText($out, $html, (New-Object System.Text.UTF8Encoding($false)))
+[IO.File]::WriteAllText($index, $html, (New-Object System.Text.UTF8Encoding($false)))
 
 $size = (Get-Item -LiteralPath $out).Length
 Write-Host "Built $out ($size bytes)"
+Write-Host "Built $index (same content, served directly at the site root)"

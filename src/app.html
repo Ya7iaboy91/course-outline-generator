@@ -533,11 +533,12 @@ const RENDERERS = {
     const rows = S.assessments.map((a) => `<div class="row" style="align-items:center; gap:8px; margin-bottom:10px">
       <span style="flex:1.5; min-width:180px"><input data-bind="as:${a.id}:name" placeholder="e.g. Assignments" value="${esc(a.name)}"></span>
       <span style="flex:1.2; min-width:140px"><input data-bind="as:${a.id}:weight" placeholder="e.g. 30%" value="${esc(a.weight)}"></span>
-      <span style="flex:1.5; min-width:180px"><input data-bind="as:${a.id}:due" placeholder="e.g. 2026-09-15" value="${esc(a.due)}"></span>
+      <span style="flex:1.5; min-width:180px"><input data-bind="as:${a.id}:due" placeholder="e.g. 2026-09-15 or TBA" value="${esc(a.due)}"></span>
       <div style="flex:0 0 auto"><button class="delbtn" data-action="rm_as:${a.id}" ${S.assessments.length===1?'disabled':''}>Remove</button></div>
     </div>`).join('');
     return `<div class="card">
       <div class="caption">Specify the assessments that make up the final grade (e.g. Participation, Assignment(s), Quizze(s), Midterms, Final Exam, Project).</div>
+      <div class="caption">(TBA = To Be Announced on D2L.)</div>
       <div class="gridhead" style="gap:16px; margin-bottom:8px">${header}</div>
       ${rows}
       <div style="margin-top:6px"><button class="minibtn" data-action="add_as">+ Add row</button></div>

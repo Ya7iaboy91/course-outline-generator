@@ -539,7 +539,7 @@ const RENDERERS = {
     <div class="card card-courseinfo" style="margin-top:16px">
       <div style="margin-bottom:12px">
         <label style="display:block; font-size:16px; font-weight:700; color:#333; margin-bottom:6px" class="req">Classes Time / Location</label>
-        <div class="caption" style="margin-bottom:12px">At least 1 row must be completed.</div>
+        <div class="caption" style="margin-bottom:12px"></div>
         <label class="toggle"><input type="checkbox" data-bind="has_tutlab" ${S.has_tutlab?'checked':''}> This course has tutorial / lab sessions</label>
         ${sections}
         <div style="margin-top:14px">
@@ -1064,7 +1064,7 @@ function missingFields() {
   }
   const hasFilledLecture = S.classes_grid.some(r => !r.tut && r.day && r.slot && r.classroom && r.classroom.trim());
   if (!hasFilledLecture) {
-    m.push('Classes Time / Location (at least one lecture row with Day, Slot, and Classroom completed)');
+    m.push('Classes Time / Location');
   }
   // Grading scheme: every named assessment needs a numeric weight and the total must be 100%.
   // (Nameless rows are dropped from the PDF, so they are ignored here. The optional Bonus 5%

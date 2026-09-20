@@ -126,7 +126,7 @@ select[data-bind]{height:38px}
       <div>
         <h1>UPEI Style Course Outline Generator</h1>
         <div class="cap">Fill the tabs, then generate a PDF.</div>
-        <div class="hd">  </div>
+        <div class="hd"> add </div>
       </div>
     </div>
 
@@ -657,7 +657,7 @@ const RENDERERS = {
   },
 
   grading() {
-    const header = ['Assessment Method', 'Weight', 'Due Date'].map((h, i) => `<span style="flex:1.2; font-size:14px; font-weight:700${i === 0 ? ' req' : ''}">${esc(h)}</span>`).join('');
+    const header = ['Assessment Method', 'Weight', 'Due Date'].map((h, i) => `<span${i === 0 ? ' class="req"' : ''} style="flex:1.2; font-size:14px; font-weight:700">${esc(h)}</span>`).join('');
     const rows = S.assessments.map((a, i) => `<div class="row" style="align-items:flex-start; gap:8px; margin-bottom:10px">
       <span style="flex:1.5; min-width:180px"><textarea data-bind="as:${a.id}:name" placeholder="e.g. Assignments" rows="1" data-autogrow>${esc(a.name)}</textarea></span>
       <span style="flex:1.2; min-width:140px"><textarea data-bind="as:${a.id}:weight" placeholder="e.g. 30%" rows="1" data-autogrow>${esc(a.weight)}</textarea></span>

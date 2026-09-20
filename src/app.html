@@ -667,13 +667,9 @@ const RENDERERS = {
       </span>
       <div style="flex:0 0 auto"><button class="delbtn" data-action="rm_as:${a.id}" ${S.assessments.length===1?'disabled':''}>Remove</button></div>
     </div>`).join('');
-    // Live total of named rows with valid weights (recomputed on each render).
-    const _named = S.assessments.filter(a => (a.name || '').trim());
-    const _parsed = _named.map(a => parseWeight(a.weight));
-    const _allOk = _named.length > 0 && _parsed.every(v => v !== null && v > 0);
-    const _total = _allOk ? parseFloat(_parsed.reduce((s, v) => s + v, 0).toFixed(2)) : null;
-    const _totalOk = _total !== null && Math.abs(_total - 100) <= 0.01;
-    const totalHtml = `<div style="font-size:14px;font-weight:700;margin:8px 0 0;color:${_totalOk ? '#1a7f37' : '#d1242f'}">Total: ${_total === null ? '—' : _total + '%'}${_totalOk ? '' : ' (must equal 100%)'}</div>`;
+    // Live total of named rows with valid weights (recomputed on each render,
+    // and refreshed in place on every keystroke via refreshWeightTotal()).
+    const totalHtml = weightTotalHtml();
     return `<div class="card card-grading">
       <div class="cardtitle">Specify the assessments that make up the final grade (e.g. Participation, Assignment(s), Quiz(zes), Midterms, Final Exam, Project).</div>
       <div class="caption">(TBA = To Be Announced on D2L.)</div>
@@ -713,6 +709,7 @@ document.addEventListener('input', e => {
   setPath(el.dataset.bind, v);
   if (el.tagName === 'TEXTAREA' && el.hasAttribute('data-autogrow')) autogrow(el);
   if (el.dataset.sync === 'weeks') syncWeeks(Number(el.value) || 1);
+  refreshWeightTotal();
 });
 // Clicking a Due Date box drops the calendar; dismiss it (Esc) to type TBA instead.
 function openDuePicker(id) {
@@ -733,6 +730,7 @@ document.addEventListener('change', e => {
   if (el) {
     let v = el.type === 'checkbox' ? el.checked : el.value;
     setPath(el.dataset.bind, v);
+    refreshWeightTotal();
     if (el.dataset.bind === 'has_tutlab') syncTutlabRows(el.checked);
     if (el.dataset.bind === 'has_ta' || el.dataset.bind === 'has_tutlab') render();
     return;
@@ -1006,6 +1004,27 @@ function parseWeight(s) {
   if (!/^\d+(\.\d+)?$/.test(t)) return null;
   const v = parseFloat(t);
   return Number.isFinite(v) ? v : null;
+}
+// Shared weight-total logic: { total: number|null, ok: boolean }.
+function weightTotal() {
+  const named = S.assessments.filter(a => (a.name || '').trim());
+  const parsed = named.map(a => parseWeight(a.weight));
+  if (!named.length || !parsed.every(x => x !== null && x > 0)) return { total: null, ok: false };
+  const total = parseFloat(parsed.reduce((s, x) => s + x, 0).toFixed(2));
+  return { total, ok: Math.abs(total - 100) <= 0.01 };
+}
+function weightTotalHtml() {
+  const { total, ok } = weightTotal();
+  return `<div id="weightTotal" style="font-size:14px;font-weight:700;margin:8px 0 0;color:${ok ? '#1a7f37' : '#d1242f'}">Total: ${total === null ? '—' : total + '%'}${ok ? '' : ' (must equal 100%)'}</div>`;
+}
+// In-place refresh of the total line (no re-render, so typing never loses focus).
+// No-op unless the Grading tab is currently shown.
+function refreshWeightTotal() {
+  const el = document.getElementById('weightTotal');
+  if (!el) return;
+  const { total, ok } = weightTotal();
+  el.style.color = ok ? '#1a7f37' : '#d1242f';
+  el.textContent = `Total: ${total === null ? '—' : total + '%'}${ok ? '' : ' (must equal 100%)'}`;
 }
 function missingFields() {
   const m = [];

@@ -126,7 +126,7 @@ select[data-bind]{height:38px}
       <div>
         <h1>UPEI Style Course Outline Generator</h1>
         <div class="cap">Fill the tabs, then generate a PDF.</div>
-        <div class="hd"> add </div>
+        <div class="hd">  </div>
       </div>
     </div>
 
@@ -436,11 +436,28 @@ function renderProgress(issues) {
   }).join('');
 }
 // Focus-safe: rebuilds only the tab strip + dots (never the inputs).
+// Once a missing-fields warning is showing, it is also refreshed live here
+// so fixed items disappear without pressing Generate again.
+let missingWarnActive = false;
+function missingWarnText() {
+  const issues = tabIssues();
+  const flagged = TABS
+    .map(([id, label], i) => ({ n: i + 1, label, list: issues[id] || [] }))
+    .filter(t => t.list.length);
+  if (!flagged.length) return '';
+  return 'Required fields missing:\n' + flagged.map(t => `${t.n}. ${t.label}\n` + t.list.map((x, j) => `  ${t.n}.${j + 1} ${x}`).join('\n')).join('\n\n');
+}
 function refreshStatus() {
   const issues = tabIssues();
   const tabsEl = document.getElementById('tabs');
   if (tabsEl) tabsEl.innerHTML = tabsHtml(issues);
   renderProgress(issues);
+  if (missingWarnActive) {
+    const warn = missingWarnText();
+    const m = document.getElementById('msg');
+    if (!warn) setMsg('', '');
+    else if (m && warn !== m.textContent) setMsg(warn, 'err');
+  }
 }
 function stampSaved() {
   const el = document.getElementById('saveState');
@@ -904,6 +921,9 @@ function setMsg(text, kind) {
   const m = document.getElementById('msg');
   m.textContent = text || '';
   m.className = 'msg ' + (kind || '');
+  // Any non-warning message deactivates live warning tracking; the warning
+  // text itself (re)activates it.
+  missingWarnActive = !!text && text.indexOf('Required fields missing') === 0;
 }
 
 // ============================================================= collect / validate
@@ -1461,12 +1481,9 @@ function buildDoc(data) {
 
 // ============================================================= generate / save / load
 function generate() {
-  const issues = tabIssues();
-  const flagged = TABS
-    .map(([id, label], i) => ({ n: i + 1, label, list: issues[id] || [] }))
-    .filter(t => t.list.length);
-  if (flagged.length) {
-    setMsg('Required fields missing:\n' + flagged.map(t => `${t.n}. ${t.label}\n` + t.list.map((x, j) => `  ${t.n}.${j + 1} ${x}`).join('\n')).join('\n\n'), 'err');
+  const warn = missingWarnText();
+  if (warn) {
+    setMsg(warn, 'err');
     return;
   }
   const data = collect();

@@ -478,7 +478,7 @@ const RENDERERS = {
     const groups = (S.class_groups && S.class_groups.length) ? S.class_groups : ['1'];
     const rowHtml = (row) => `
       <div class="row" style="align-items:center; gap:12px; margin-bottom:10px">
-        <div style="flex:1; min-width:80px; font-weight:400; font-size:14px">${esc(row.tut ? 'Tutorial/Lab' : row.name)}</div>
+        <div class="${row.tut && S.has_tutlab ? 'req' : ''}" style="flex:1; min-width:80px; font-weight:400; font-size:14px">${esc(row.tut ? 'Tutorial/Lab' : row.name)}</div>
         <div style="flex:2; min-width:140px">
           <select data-bind="cg:${row.id}:day" style="width:100%; padding:8px 10px; border:1px solid #c9ccd2; border-radius:6px; font-size:14px">
             <option value="">-- Choose Day --</option>
@@ -1082,6 +1082,17 @@ function missingFields() {
   const hasFilledLecture = S.classes_grid.some(r => !r.tut && r.day && r.slot && r.classroom && r.classroom.trim());
   if (!hasFilledLecture) {
     m.push('Classes Time / Location');
+  }
+  // Tutorial/Lab rows are required when the course has tutorial/lab sessions:
+  // every group must have its tut row completed with day, slot, and classroom.
+  if (S.has_tutlab) {
+    const groups = (S.class_groups && S.class_groups.length) ? S.class_groups : ['1'];
+    groups.forEach(g => {
+      const t = S.classes_grid.find(r => r.tut && r.group === g);
+      if (!t || !t.day || !t.slot || !(t.classroom || '').trim()) {
+        m.push(`Classes Time (Group ${g} Tutorial/Lab incomplete)`);
+      }
+    });
   }
   // Grading scheme: every named assessment needs a numeric weight and the total must be 100%.
   // (Nameless rows are dropped from the PDF, so they are ignored here. The optional Bonus 5%

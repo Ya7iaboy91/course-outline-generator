@@ -99,17 +99,31 @@ select[data-bind]{height:38px}
 .card-instructor .field textarea{width:50%;min-height:44px;font-size:15px;line-height:1.45;padding:10px;border:1px solid #c9ccd2;border-radius:8px;resize:none;overflow:hidden;field-sizing:content}
 .card-instructor .field textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,16,46,.12)}
 @media(max-width:700px){.card-instructor .row{flex-wrap:wrap}}
-/* Textbooks tab: same fill-box treatment (50% width, auto-growing) */
+/* Textbooks tab: large cover holder on the left, four info fields on the right */
 .card-textbooks .row{flex-wrap:nowrap}
 .card-textbooks .field{flex:0 0 calc(50% - 8px);min-width:0}
 .card-textbooks .field:only-child{flex:1 1 100%}
 .card-textbooks .field input[type=text],.card-textbooks .field input[type=number]{width:50%;height:44px;font-size:15px}
 .card-textbooks .field textarea{width:50%;min-height:44px;font-size:15px;line-height:1.45;padding:10px;border:1px solid #c9ccd2;border-radius:8px;resize:none;overflow:hidden;field-sizing:content}
 .card-textbooks .field textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,16,46,.12)}
-@media(max-width:700px){.card-textbooks .row{flex-wrap:wrap}}
+.card-textbooks .tb-layout{display:flex;gap:20px;align-items:flex-start;margin-top:12px}
+.card-textbooks .tb-cover{flex:0 0 190px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.card-textbooks .tb-fields{flex:1;min-width:0;display:grid;grid-template-columns:1fr;gap:0}
+.card-textbooks .tb-fields .field{flex:1 1 auto;min-width:0}
+.card-textbooks .tb-fields .field textarea{width:50%;min-height:31px;font-size:15px;line-height:1.45;padding:10px;border:1px solid #c9ccd2;border-radius:8px;resize:none;overflow:hidden;field-sizing:content}
+.card-textbooks .tb-fields .field textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,16,46,.12)}
+.coverpick{display:inline-block;cursor:pointer}
+.coverpick input{display:none}
+.coverpick img{display:block;width:180px;height:auto;max-height:250px;object-fit:contain;border:1px solid #ddd;border-radius:6px}
+.coverph{display:flex;align-items:center;justify-content:center;width:180px;height:240px;border:2px dashed #a9adb6;border-radius:8px;font-size:72px;font-weight:700;color:#8b8b95;background:#f4f5f7;cursor:pointer;transition:border-color var(--trans),color var(--trans),background var(--trans)}
+.coverpick:hover .coverph{border-color:var(--accent);color:var(--accent);background:#fef2f4}
+@media(max-width:700px){.card-textbooks .row{flex-wrap:wrap}.card-textbooks .tb-layout{flex-direction:column}.card-textbooks .tb-cover{flex:none}.card-textbooks .tb-fields{grid-template-columns:1fr;width:100%}}
 /* Grading tab: cells are already fractional columns, so boxes fill the cell and grow vertically */
 .card-grading textarea[data-autogrow]{display:block;width:100%;box-sizing:border-box;min-height:38px;font-size:14px;line-height:1.45;padding:8px 10px;border:1px solid #c9ccd2;border-radius:6px;resize:none;overflow:hidden;field-sizing:content}
 .card-grading textarea[data-autogrow]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,16,46,.12)}
+.card-grading input[type=number][data-bind]{display:block;width:100%;box-sizing:border-box;height:38px;font-size:14px;padding:8px 10px;border:1px solid #c9ccd2;border-radius:6px}
+.card-grading input[type=number][data-bind]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,16,46,.12)}
+.card-grading .weightsuffix{font-size:15px;font-weight:700;color:#333}
 .pols .polcard{border:1px solid #e3e4e8;border-radius:8px;padding:16px;margin-bottom:16px}
 .pols .polcard h3{margin:0 0 4px;font-size:16px;font-weight:700}
 .polrow{display:flex;align-items:center;gap:10px;font-size:13.5px;margin:6px 0 10px}
@@ -144,6 +158,11 @@ select[data-bind]{height:38px}
 
     <div class="note">Works offline entirely in your browser. Data auto-saves
     locally while you type. The PDF mirrors the UPEI course-outline layout.</div>
+
+    <div class="hd">Data</div>
+    <button class="btn" id="exportBtn">Export data (JSON)</button>
+    <button class="btn" id="importBtn">Import data (JSON)</button>
+    <input type="file" id="importFile" accept="application/json,.json" style="display:none">
   </aside>
 
   <main class="main">
@@ -361,7 +380,7 @@ function normalizeState(o) {
 
   d.textbooks = Array.isArray(o && o.textbooks) ? o.textbooks.map(r => ({ id: nid(), image: (typeof r.image === 'string' && String(r.image).startsWith('data:image')) ? r.image : null, title: r.title||'', author: r.author||'', publisher: r.publisher||'', isbn: r.isbn||'' })) : d.textbooks;
   d.weeks = Array.isArray(o && o.weeks) ? o.weeks.map(r => ({ id: nid(), topic: r.topic||'', reading: r.reading||'' })) : d.weeks;
-  d.assessments = Array.isArray(o && o.assessments) ? o.assessments.map(r => ({ id: nid(), name: r.name||'', weight: r.weight||'', due: r.due||'', los: r.los||'' })) : d.assessments;
+  d.assessments = Array.isArray(o && o.assessments) ? o.assessments.map(r => ({ id: nid(), name: r.name||'', weight: weightDisplay(r.weight||''), due: r.due||'', los: r.los||'' })) : d.assessments;
   d.num_weeks = Math.max(1, d.weeks.length);
   d.bonus_5_marks = !!(o && o.bonus_5_marks);
   if (o && o.policies) d.policies = POLICIES.reduce((acc, p) => { acc[p.key] = { enabled: !!(o.policies[p.key] && o.policies[p.key].enabled), text: (o.policies[p.key] && o.policies[p.key].text) || POLICY_DEFAULTS[p.key].text }; return acc; }, {});
@@ -377,7 +396,7 @@ function setPath(bind, value) {
   if (kind === 'lo') { const r = byId(S.los, p[1]); if (r) r[p[2]] = value; }
   else if (kind === 'tb') { const r = byId(S.textbooks, p[1]); if (r) r[p[2]] = value; }
   else if (kind === 'wk') { const r = byId(S.weeks, p[1]); if (r) r[p[2]] = value; }
-  else if (kind === 'as') { const r = byId(S.assessments, p[1]); if (r) r[p[2]] = value; }
+  else if (kind === 'as') { const r = byId(S.assessments, p[1]); if (r) { let v = value; if (p[2] === 'weight' && typeof v === 'string') v = v.replace(/%/g, '').trim(); r[p[2]] = v; } }
   else if (kind === 'cg') { const r = byId(S.classes_grid, p[1]); if (r) r[p[2]] = value; }
   else if (kind === 'loc') { const col = S.lo_columns.find(c => c.key === p[1]); if (col) col.label = value; }
   else if (kind === 'pol') { const pol = S.policies[p[1]]; if (pol) pol[p[2]] = value; }
@@ -641,21 +660,21 @@ const RENDERERS = {
   textbooks() {
     const rows = S.textbooks.map((tb) => `<div class="rowblock">
       <div class="lbl">Textbook</div>
-      <div class="coverbox">
-        <div class="preview">${tb.image ? `<img src="${tb.image}">` : ''}</div>
-        <div class="uploads" style="flex:1">
-          <label class="minibtn" style="margin-top:0">${tb.image ? 'Replace cover' : 'Upload cover (png/jpg)'}<input type="file" accept="image/png,image/jpeg" data-upload="tb:${tb.id}" style="display:none"></label>
+      <div class="tb-layout">
+        <div class="tb-cover">
+          <label class="coverpick" title="Click to ${tb.image ? 'replace' : 'add'} cover image (png/jpg)">
+            <input type="file" accept="image/png,image/jpeg" data-upload="tb:${tb.id}" style="display:none">
+            ${tb.image ? `<img src="${tb.image}" alt="Textbook cover">` : `<span class="coverph" aria-hidden="true">?</span>`}
+          </label>
+          <button class="delbtn" data-action="rm_tb:${tb.id}" ${S.textbooks.length===1?'disabled':''}>Remove</button>
+        </div>
+        <div class="tb-fields">
+          <div class="field"><label class="req">Title</label><textarea data-bind="tb:${tb.id}:title" placeholder="Introduction to Linear Algebra" rows="1" data-autogrow>${esc(tb.title)}</textarea></div>
+          <div class="field"><label>Author(s)</label><textarea data-bind="tb:${tb.id}:author" placeholder="Jane Smith" rows="1" data-autogrow>${esc(tb.author)}</textarea></div>
+          <div class="field"><label>Publisher</label><textarea data-bind="tb:${tb.id}:publisher" placeholder="Academic Press" rows="1" data-autogrow>${esc(tb.publisher)}</textarea></div>
+          <div class="field"><label>ISBN-13</label><textarea data-bind="tb:${tb.id}:isbn" placeholder="978-0123456789" rows="1" data-autogrow>${esc(tb.isbn)}</textarea></div>
         </div>
       </div>
-      <div class="row" style="margin-top:12px">
-        <div class="field"><label class="req">Title</label><textarea data-bind="tb:${tb.id}:title" placeholder="Introduction to Linear Algebra" rows="1" data-autogrow>${esc(tb.title)}</textarea></div>
-        <div class="field"><label>Author(s)</label><textarea data-bind="tb:${tb.id}:author" placeholder="Jane Smith" rows="1" data-autogrow>${esc(tb.author)}</textarea></div>
-      </div>
-      <div class="row">
-        <div class="field"><label>Publisher</label><textarea data-bind="tb:${tb.id}:publisher" placeholder="Academic Press" rows="1" data-autogrow>${esc(tb.publisher)}</textarea></div>
-        <div class="field"><label>ISBN-13</label><textarea data-bind="tb:${tb.id}:isbn" placeholder="978-0123456789" rows="1" data-autogrow>${esc(tb.isbn)}</textarea></div>
-      </div>
-      <button class="delbtn" data-action="rm_tb:${tb.id}" ${S.textbooks.length===1?'disabled':''}>Remove</button>
     </div>`).join('');
     return `<div class="card card-textbooks">
       <div class="cardtitle">At least one textbook is required.</div>
@@ -689,7 +708,7 @@ const RENDERERS = {
     const header = ['Assessment Method', 'Weight', 'Due Date'].map((h, i) => `<span${i === 0 ? ' class="req"' : ''} style="flex:1.2; font-size:14px; font-weight:700">${esc(h)}</span>`).join('');
     const rows = S.assessments.map((a, i) => `<div class="row" style="align-items:flex-start; gap:8px; margin-bottom:10px">
       <span style="flex:1.5; min-width:180px"><textarea data-bind="as:${a.id}:name" placeholder="e.g. Assignments" rows="1" data-autogrow>${esc(a.name)}</textarea></span>
-      <span style="flex:1.2; min-width:140px"><textarea data-bind="as:${a.id}:weight" placeholder="e.g. 30%" rows="1" data-autogrow>${esc(a.weight)}</textarea></span>
+      <span style="flex:1.2; min-width:140px; display:flex; align-items:center; gap:6px"><input type="number" data-bind="as:${a.id}:weight" placeholder="e.g. 30" min="0" max="100" step="any" value="${esc(weightDisplay(a.weight))}" style="flex:1; min-width:0"><span class="weightsuffix">%</span></span>
       <span style="flex:1.5; min-width:180px">
         <textarea data-bind="as:${a.id}:due" placeholder="e.g. 2026-09-15 or TBA" rows="1" data-autogrow data-duetoggle="${a.id}" title="Click for the calendar, or just type a date / TBA">${esc(a.due)}</textarea>
         <input type="date" data-duepick="${a.id}" ${/^\d{4}-\d{2}-\d{2}$/.test(a.due || '') ? `value="${esc(a.due)}"` : ''} tabindex="-1" aria-hidden="true" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0">
@@ -701,7 +720,7 @@ const RENDERERS = {
     const totalHtml = weightTotalHtml();
     return `<div class="card card-grading">
       <div class="cardtitle">Specify the assessments that make up the final grade (e.g. Participation, Assignment(s), Quiz(zes), Midterms, Final Exam, Project).</div>
-      <div class="caption">(TBA = To Be Announced on D2L.)</div>
+      <div class="caption">(TBA = To Be Announced on D2L. Enter weights as numbers only, e.g. 30 â€” the % sign is added automatically in the PDF.)</div>
       <div class="gridhead" style="gap:16px; margin-bottom:8px">${header}</div>
       ${rows}
       <div style="margin-top:6px"><button class="minibtn btn-add-lecture" data-action="add_as">+ Add row</button></div>
@@ -916,6 +935,46 @@ document.getElementById('resetBtn').addEventListener('click', () => {
     setMsg('', '');
   }
 });
+document.getElementById('exportBtn').addEventListener('click', () => {
+  try {
+    const code = ((S.course_code || 'draft').trim() || 'draft').replace(/[/\\]/g, '-');
+    const t = new Date(), p = n => String(n).padStart(2, '0');
+    const fname = `course-outline-${code}-${t.getFullYear()}${p(t.getMonth() + 1)}${p(t.getDate())}.json`;
+    const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    setMsg(`Exported ${fname}.`, 'ok');
+  } catch (e) {
+    setMsg('Export failed: ' + e.message, 'err');
+  }
+});
+document.getElementById('importBtn').addEventListener('click', () => {
+  document.getElementById('importFile').click();
+});
+document.getElementById('importFile').addEventListener('change', (e) => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onerror = () => setMsg('Could not read that file.', 'err');
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(reader.result);
+      S = normalizeState(parsed);
+      _seq = 1000;
+      saveLS();
+      render();
+      setMsg(`Imported ${f.name}.`, 'ok');
+    } catch (err) {
+      setMsg('Import failed: not a valid course-outline JSON file.', 'err');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(f);
+});
 
 function setMsg(text, kind) {
   const m = document.getElementById('msg');
@@ -1027,12 +1086,14 @@ function collect() {
   data.weeks = S.weeks.filter(r => (r.topic && r.topic.trim()) || (r.reading && r.reading.trim()))
     .map((r, i) => ({ num: i + 1, topic: r.topic || '', reading: r.reading || '' }));
   data.assessments = S.assessments.filter(r => r.name && r.name.trim())
-    .map(r => ({ name: r.name, weight: r.weight, due: r.due }));
+    .map(r => ({ name: r.name, weight: weightForPdf(r.weight), due: r.due }));
   data.policies = {};
   POLICIES.forEach(p => data.policies[p.key] = { enabled: !!S.policies[p.key].enabled, text: S.policies[p.key].text });
   return data;
 }
 // Parses a weight cell: accepts "30", "30%", "12.5 %", "12,5%". Returns a number or null.
+// The "%" variants are kept only for backward compatibility with older saves;
+// the UI is numeric-only now (type="number"), so new entries never contain "%".
 function parseWeight(s) {
   if (s == null) return null;
   let t = String(s).trim();
@@ -1042,6 +1103,21 @@ function parseWeight(s) {
   if (!/^\d+(\.\d+)?$/.test(t)) return null;
   const v = parseFloat(t);
   return Number.isFinite(v) ? v : null;
+}
+// Display value for the numeric-only weight input: strips any legacy "%"
+// so old saves like "30%" render as "30" (the "%" is shown as a suffix).
+function weightDisplay(s) {
+  if (s == null) return '';
+  let t = String(s).trim();
+  if (t.endsWith('%')) t = t.slice(0, -1).trim();
+  return t;
+}
+// PDF value for a weight cell: numeric input plus "%" appended by default
+// (e.g. "30" -> "30%"). Legacy "30%" values are normalized, never doubled.
+function weightForPdf(s) {
+  const v = parseWeight(s);
+  if (v === null) return String(s == null ? '' : s).trim();
+  return `${String(v).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1')}%`;
 }
 // Shared weight-total logic: { total: number|null, ok: boolean }.
 function weightTotal() {
@@ -1118,7 +1194,7 @@ function missingFields() {
       const name = (r.name || '').trim();
       const w = parseWeight(r.weight);
       if (!((r.weight || '').trim())) { m.push(`Grading Scheme weight missing for "${name}"`); allValid = false; }
-      else if (w === null || !(w > 0)) { m.push(`Grading Scheme invalid weight for "${name}" (use a number like 30%)`); allValid = false; }
+      else if (w === null || !(w > 0)) { m.push(`Grading Scheme invalid weight for "${name}" (use a number like 30)`); allValid = false; }
       else total += w;
     });
     if (allValid) {

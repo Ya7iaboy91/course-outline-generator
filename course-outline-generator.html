@@ -1314,7 +1314,7 @@ function buildDoc(data) {
   if (data.weeks.length) {
     C.push(sec('COURSE SCHEDULE AND TIMELINE'));
     const schedBody = [
-      [{ text: 'Week', bold: true, fillColor: GRAYBG, alignment: 'center' }, { text: 'Topics / Content', bold: true, fillColor: GRAYBG }, { text: 'Reading Material', bold: true, fillColor: GRAYBG }],
+      [{ text: 'Week', bold: true, fillColor: HDR_CLR, alignment: 'center' }, { text: 'Topics / Content', bold: true, fillColor: HDR_CLR }, { text: 'Reading Material', bold: true, fillColor: HDR_CLR }],
       ...data.weeks.map(w => [
         { text: String(w.num), alignment: 'center', margin: [0, 6, 0, 6] },
         { text: w.topic, margin: [0, 6, 0, 6] },
@@ -1332,11 +1332,11 @@ function buildDoc(data) {
     C.push({ text: 'The grading scheme for this course is as follows:', margin: [0, 0, 0, 8] });
     const body = [
       ['Assessment Method', 'Weight', 'Due Date'].map(h => ({ text: h, bold: true, fillColor: HDR_CLR })),
-      ...data.assessments.map(a => [{ text: a.name, bold: true }, a.weight, a.due]),
+      ...data.assessments.map(a => [{ text: a.name, bold: true, fillColor: HDR_CLR }, a.weight, a.due]),
     ];
     if (data.bonus_5_marks) {
       body.push([
-        { text: 'Bonus Marks', bold: true },
+        { text: 'Bonus Marks', bold: true, fillColor: HDR_CLR },
         '5%',
         'Throughout semester'
       ]);

@@ -137,7 +137,9 @@ const POLICY_DEFAULTS = {
 // ============================================================= state
 let _seq = 1;
 const nid = () => `r${_seq++}`;
-const newLectureRow = (name) => ({ id: nid(), name: name || 'Lecture', day: '', slot: '', classroom: '' });
+const newLectureRow = (name, group) => ({ id: nid(), name: name || 'Lecture', day: '', slot: '', classroom: '', group: group || '', tut: false });
+const newTutRow = (group) => ({ id: nid(), name: 'Tutorial/Lab', day: '', slot: '', classroom: '', group: group || '', tut: true });
+const MAX_GROUPS = 8;
 const newLO = () => ({ id: nid(), text: '', exam: false, assignment: false, activity: false, project: false });
 const newTB = () => ({ id: nid(), image: null, title: '', author: '', publisher: '', isbn: '' });
 const newWK = () => ({ id: nid(), topic: '', reading: '' });
@@ -154,12 +156,14 @@ function defaultState() {
     credits: '', 
     prerequisites: '', 
     classes_grid: [
-      { id: nid(), name: 'Lecture 1', day: '', slot: '', classroom: '' },
-      { id: nid(), name: 'Lecture 2', day: '', slot: '', classroom: '' },
-      { id: nid(), name: 'Lecture 3', day: '', slot: '', classroom: '' }
+      { id: nid(), name: 'Lecture 1', day: '', slot: '', classroom: '', group: '1', tut: false },
+      { id: nid(), name: 'Lecture 2', day: '', slot: '', classroom: '', group: '1', tut: false },
+      { id: nid(), name: 'Lecture 3', day: '', slot: '', classroom: '', group: '1', tut: false }
     ],
+    class_groups: ['1'],
     passing_grade: PASSING_GRADE_DEFAULT,
     has_ta: false,
+    has_tutlab: false,
     instructor: { name: '', email: '', room: '', office_hours: '' },
     ta: { name: '', email: '', room: '', office_hours: '' },
     description: '',
@@ -241,11 +245,27 @@ function normalizeState(o) {
 
   d.classes_grid = Array.isArray(o && o.classes_grid) ? o.classes_grid.map((r, i) => ({
     id: nid(),
-    name: r.name || `Lecture ${i + 1}`,
+    name: r.tut ? 'Tutorial/Lab' : (r.name || `Lecture ${i + 1}`),
     day: r.day || '',
     slot: r.slot || '',
-    classroom: r.classroom || ''
+    classroom: r.classroom || '',
+    group: r.group || '',
+    tut: !!r.tut
   })) : d.classes_grid;
+  // Group registry: keep saved list, else derive from row values, else start at Group 1.
+  // Old saves predate groups entirely and land on ['1'] with the toggle off.
+  if (Array.isArray(o && o.class_groups) && o.class_groups.length) {
+    d.class_groups = [...new Set(o.class_groups.map(g => String(g || '').trim()).filter(Boolean))];
+    if (!d.class_groups.length) d.class_groups = ['1'];
+  } else {
+    const used = [...new Set(d.classes_grid.map(r => r.group).filter(Boolean))];
+    used.sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0));
+    d.class_groups = used.length ? used : ['1'];
+  }
+  // Rows predating groups belong to the first group so every row renders
+  // inside exactly one section.
+  d.classes_grid.forEach(r => { if (!r.group) r.group = d.class_groups[0]; });
+  d.has_tutlab = !!(o && o.has_tutlab);
 
   d.lo_columns = Array.isArray(o && o.lo_columns) ? o.lo_columns.map(c => ({
     key: c.key || nid(),
@@ -323,9 +343,10 @@ const RENDERERS = {
   courseinfo() {
     const defaultDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const defaultSlots = ['1', '2', '3', '4', '5'];
-    const lectureRows = S.classes_grid.map((row, idx) => `
+    const groups = (S.class_groups && S.class_groups.length) ? S.class_groups : ['1'];
+    const rowHtml = (row) => `
       <div class="row" style="align-items:center; gap:12px; margin-bottom:10px">
-        <div style="flex:1; min-width:80px; font-weight:600; font-size:13.5px">${esc(row.name)}</div>
+        <div style="flex:1; min-width:80px; font-weight:600; font-size:13.5px">${esc(row.tut ? 'Tutorial/Lab' : row.name)}</div>
         <div style="flex:2; min-width:140px">
           <select data-bind="cg:${row.id}:day" style="width:100%; padding:8px 10px; border:1px solid #c9ccd2; border-radius:6px; font-size:14px">
             <option value="">-- Choose Day --</option>
@@ -344,8 +365,30 @@ const RENDERERS = {
         <div style="flex:0 0 auto">
           <button class="delbtn" data-action="rm_cg:${row.id}" style="padding: 4px 10px" ${S.classes_grid.length===1?'disabled':''}>&times;</button>
         </div>
+      </div>`;
+    // One titled section per group; ungrouped rows (old saves) fall into the first.
+    const sections = groups.map(g => {
+      const rows = S.classes_grid.filter(r => r.group === g || (!r.group && g === groups[0]));
+      const lectures = rows.filter(r => !r.tut);
+      const tuts = rows.filter(r => r.tut);
+      return `
+      <div style="margin:14px 0 8px; display:flex; align-items:center; gap:10px">
+        <span style="font-weight:700; font-size:14px">Group ${esc(g)}${g===groups[0] ? ' ' : ''}</span>
+        <button class="delbtn" data-action="rm_group:${esc(g)}" style="padding:2px 10px" ${(groups.length===1 || g===groups[0])?'disabled':''}>Remove</button>
       </div>
-    `).join('');
+      <div class="gridhead" style="align-items:center; gap:12px; margin-bottom:6px">
+        <span style="flex:1; min-width:80px">Lecture #</span>
+        <span style="flex:2; min-width:140px">Day</span>
+        <span style="flex:1.5; min-width:100px">Slot</span>
+        <span style="flex:2; min-width:140px">Classroom</span>
+        <span style="flex:0 0 auto; width:36px"></span>
+      </div>
+      ${lectures.map(rowHtml).join('')}
+      ${tuts.map(rowHtml).join('')}
+      <div style="margin-top:10px">
+        <button class="minibtn" data-action="add_cg:${esc(g)}" style="margin-top:0">+ Add Lecture</button>
+      </div>`;
+    }).join('');
 
     return `<div class="card">
       <div class="caption">Course Information</div>
@@ -370,16 +413,10 @@ const RENDERERS = {
       <div style="margin-bottom:12px">
         <label style="display:block; font-size:14px; font-weight:600; color:#333; margin-bottom:6px" class="req">Classes Time / Location</label>
         <div class="caption" style="margin-bottom:12px">At least 1 row must be completed.</div>
-        <div class="gridhead" style="align-items:center; gap:12px; margin-bottom:6px">
-          <span style="flex:1; min-width:80px">Lecture #</span>
-          <span style="flex:2; min-width:140px">Day</span>
-          <span style="flex:1.5; min-width:100px">Slot</span>
-          <span style="flex:2; min-width:140px">Classroom</span>
-          <span style="flex:0 0 auto; width:36px"></span>
-        </div>
-        ${lectureRows}
-        <div style="margin-top:10px">
-          <button class="minibtn" data-action="add_cg" style="margin-top:0">+ Add Lecture Row</button>
+        <label class="toggle"><input type="checkbox" data-bind="has_tutlab" ${S.has_tutlab?'checked':''}> This course has tutorial / lab sessions</label>
+        ${sections}
+        <div style="margin-top:14px">
+          <button class="minibtn" data-action="add_group" style="margin-top:0" ${groups.length>=MAX_GROUPS?'disabled':''}>+ Add Group</button>
         </div>
       </div>
     </div>`;
@@ -443,7 +480,7 @@ const RENDERERS = {
     </div>`).join('');
 
     return `<div class="card">
-      <div class="caption">Insert one learning objective per row. Empty rows are dropped from the PDF. The input box size is vertically resizable to accommodate longer names.</div>
+      <div class="caption">Insert the course learning objectives.</div>
       ${rows}
       <div><button class="minibtn" data-action="add_lo">+ Add learning objective</button></div>
       <hr class="rule">
@@ -494,7 +531,7 @@ const RENDERERS = {
       </div>
     </div>`).join('');
     return `<div class="card">
-      <div class="caption">Set the number of weeks, or add/remove rows manually. Empty rows are dropped and weeks renumbered in the PDF.</div>
+      <div class="caption"></div>
       <div class="row">
         <div class="field" style="max-width:220px"><label>Number of weeks</label><input type="number" min="1" max="30" data-bind="num_weeks" data-sync="weeks" value="${Number(S.num_weeks)}"></div>
       </div>
@@ -512,7 +549,7 @@ const RENDERERS = {
       <div style="flex:0 0 auto"><button class="delbtn" data-action="rm_as:${a.id}" ${S.assessments.length===1?'disabled':''}>Remove</button></div>
     </div>`).join('');
     return `<div class="card">
-      <div class="caption">Specify the assessments that make up the final grade.</div>
+      <div class="caption">Specify the assessments that make up the final grade (e.g. Participation, Assignment(s), Quizze(s), Midterms, Final Exam, Project).</div>
       <div class="gridhead" style="gap:16px; margin-bottom:8px">${header}</div>
       ${rows}
       <div style="margin-top:6px"><button class="minibtn" data-action="add_as">+ Add row</button></div>
@@ -553,7 +590,8 @@ document.addEventListener('change', e => {
   if (el) {
     let v = el.type === 'checkbox' ? el.checked : el.value;
     setPath(el.dataset.bind, v);
-    if (el.dataset.bind === 'has_ta') render();
+    if (el.dataset.bind === 'has_tutlab') syncTutlabRows(el.checked);
+    if (el.dataset.bind === 'has_ta' || el.dataset.bind === 'has_tutlab') render();
     return;
   }
   const up = e.target.closest('[data-upload]');
@@ -607,19 +645,47 @@ document.addEventListener('click', e => {
     case 'rm_wk': if (S.weeks.length > 1) { S.weeks = S.weeks.filter(r => r.id !== id); S.num_weeks = S.weeks.length; saveLS(); render(); } break;
     case 'add_as': S.assessments.push(newAS()); saveLS(); render(); break;
     case 'rm_as': if (S.assessments.length > 1) { S.assessments = S.assessments.filter(r => r.id !== id); saveLS(); render(); } break;
-    case 'add_cg':
-      S.classes_grid.push(newLectureRow(`Lecture ${S.classes_grid.length + 1}`));
+    case 'add_cg': {
+      const gid = (id && S.class_groups.includes(id)) ? id : S.class_groups[S.class_groups.length - 1];
+      const n = S.classes_grid.filter(r => r.group === gid && !r.tut).length + 1;
+      S.classes_grid.push(newLectureRow(`Lecture ${n}`, gid));
       saveLS();
       render();
       break;
-    case 'rm_cg':
-      if (S.classes_grid.length > 1) {
-        S.classes_grid = S.classes_grid.filter(r => r.id !== id);
-        S.classes_grid.forEach((r, i) => { r.name = `Lecture ${i + 1}`; });
-        saveLS();
-        render();
-      }
+    }
+    case 'rm_cg': {
+      const row = byId(S.classes_grid, id);
+      if (!row || S.classes_grid.length <= 1) break;
+      const gid = row.group;
+      S.classes_grid = S.classes_grid.filter(r => r.id !== id);
+      relabelGroup(gid);
+      saveLS();
+      render();
       break;
+    }
+    case 'add_group': {
+      // New group mirrors Group 1's structure: 3 blank lecture rows plus a
+      // Tutorial/Lab row when the tut/lab option is on.
+      const nums = S.class_groups.map(g => parseInt(g, 10) || 0);
+      const next = String(Math.max(0, ...nums) + 1);
+      if (S.class_groups.includes(next) || S.class_groups.length >= MAX_GROUPS) break;
+      S.class_groups.push(next);
+      for (let i = 1; i <= 3; i++) S.classes_grid.push(newLectureRow(`Lecture ${i}`, next));
+      if (S.has_tutlab) S.classes_grid.push(newTutRow(next));
+      saveLS();
+      render();
+      break;
+    }
+    case 'rm_group': {
+      // Deleting a group removes its entries as well. Group 1 (the first
+      // group) can never be deleted.
+      if (S.class_groups.length <= 1 || !S.class_groups.includes(id) || id === S.class_groups[0]) break;
+      S.classes_grid = S.classes_grid.filter(r => r.group !== id);
+      S.class_groups = S.class_groups.filter(g => g !== id);
+      saveLS();
+      render();
+      break;
+    }
     case 'add_loc':
       const newKey = `col_${nid()}`;
       S.lo_columns.push({ key: newKey, label: 'New Column' });
@@ -637,6 +703,23 @@ document.addEventListener('click', e => {
       break;
   }
 });
+// Per-section lecture numbering (tut rows excluded, keep their name).
+function relabelGroup(gid) {
+  let n = 0;
+  S.classes_grid.forEach(r => { if (r.group === gid && !r.tut) r.name = `Lecture ${++n}`; });
+}
+// Ensures every group section owns exactly one Tutorial/Lab row when on,
+// none when off.
+function syncTutlabRows(on) {
+  if (on) {
+    S.class_groups.forEach(g => {
+      if (!S.classes_grid.some(r => r.group === g && r.tut)) S.classes_grid.push(newTutRow(g));
+    });
+  } else {
+    S.classes_grid = S.classes_grid.filter(r => !r.tut);
+  }
+  saveLS();
+}
 function syncWeeks(target) {
   target = Math.max(1, Math.min(30, Math.round(target)));
   while (S.weeks.length < target) S.weeks.push(newWK());
@@ -664,17 +747,73 @@ function setMsg(text, kind) {
 }
 
 // ============================================================= collect / validate
+// One class line. Tutorial/Lab rows are named; lecture rows stay plain.
+// Group prefix is optional so the grouped subcell table can rely on its
+// headers instead.
+function formatClassLine(c, withGroup) {
+  const grp = (withGroup && c.group) ? `Group ${c.group} - ` : '';
+  const name = c.tut ? 'Tutorial/Lab, ' : '';
+  return `${grp}${name}${c.day || ''}, Slot(${c.slot || ''}), at (${c.classroom || ''})`;
+}
+// Cell value for Classes Time/Location: plain multi-line text unless 2+
+// groups have entries â€” then one horizontal block per group stacked
+// vertically with a rule between blocks: a narrow header column with the
+// group name tilted vertically (canvas image, shaded), beside the
+// full-width details that wrap normally. No nested tables (weighted stars
+// like '2*' crash this pdfmake).
+function classesCell(data) {
+  const rows = data.classes_rows || [];
+  const grouped = rows.filter(r => r.group);
+  if (!data.multi || !grouped.length) {
+    return rows.map(c => formatClassLine(c, true)).join('\n');
+  }
+  const order = [...new Set(grouped.map(r => r.group))];
+  order.sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0));
+  const stray = rows.filter(r => !r.group);
+  if (stray.length) order.push('Other');
+  const titleFor = g => (g === 'Other' ? 'Other' : `Group ${g}`);
+  const linesFor = g => (g === 'Other' ? stray : grouped.filter(r => r.group === g))
+    .map(c => formatClassLine(c, false)).join('\n');
+  // Fixed-width rule: the value column is ~150pt, so 130 always fits inside
+  // without overflowing (canvas takes absolute coords only).
+  const SEP = { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 130, y2: 0, lineWidth: 0.5, lineColor: '#000000' }], margin: [0, 2, 0, 8] };
+  return {
+    stack: order.flatMap((g, i) => [
+      ...(i === 0 ? [] : [SEP]),
+      {
+        columns: [
+          { width: 18, image: vGroupLabel(titleFor(g)), margin: [0, 2, 0, 2] },
+          { width: '*', text: linesFor(g) },
+        ],
+        columnGap: 8,
+      },
+    ]),
+  };
+}
 function collect() {
-  const classesFormatted = S.classes_grid
+  // Groups are mentioned only when 2+ of them actually have filled entries;
+  // an empty extra section stays out of the PDF entirely, and a single used
+  // group renders exactly like the original flat format.
+  const groups = (S.class_groups && S.class_groups.length) ? S.class_groups : ['1'];
+  const firstG = groups[0];
+  const classesRows = S.classes_grid
     .filter(r => r.day || r.slot || r.classroom)
-    .map(r => `${r.day || ''}, Slot(${r.slot || ''}), at (${r.classroom || ''})`)
-    .join('\n');
+    .map(r => ({
+      tut: !!r.tut,
+      day: r.day || '', slot: r.slot || '', classroom: r.classroom || '',
+      group: r.group || firstG,
+    }));
+  const multi = new Set(classesRows.map(r => r.group)).size > 1;
+  if (!multi) classesRows.forEach(r => { r.group = ''; });
 
   const data = {
     school_name: S.school_name, year_semester: S.year_semester, course_name: S.course_name,
     course_code: S.course_code, credits: S.credits, prerequisites: S.prerequisites,
-    classes_time: classesFormatted, passing_grade: S.passing_grade,
+    classes_time: classesRows.map(c => formatClassLine(c, true)).join('\n'),
+    classes_rows: classesRows,
+    passing_grade: S.passing_grade,
     has_ta: !!S.has_ta,
+    multi,
     instructor: { ...S.instructor },
     ta: { ...S.ta },
     description: S.description,
@@ -717,7 +856,7 @@ function missingFields() {
   if (!S.textbooks.length || S.textbooks.some(r => !(r.title || '').trim())) {
     m.push('Textbook Title');
   }
-  const hasFilledLecture = S.classes_grid.some(r => r.day && r.slot && r.classroom && r.classroom.trim());
+  const hasFilledLecture = S.classes_grid.some(r => !r.tut && r.day && r.slot && r.classroom && r.classroom.trim());
   if (!hasFilledLecture) {
     m.push('Classes Time / Location (at least one lecture row with Day, Slot, and Classroom completed)');
   }
@@ -734,6 +873,33 @@ function checkMark() {
   return c.toDataURL('image/png');
 }
 const CHECK = checkMark();
+// Rotated (tilted, bottom-to-top) group header, rendered on canvas because
+// pdfmake cannot rotate text. Shading is painted behind the glyphs. Rendered
+// large and scaled down in the PDF for crispness; results cached per label.
+// Runs lazily on Generate (document exists by then).
+const _vLabelCache = {};
+function vGroupLabel(text) {
+  if (_vLabelCache[text]) return _vLabelCache[text];
+  const FS = 30, PAD = 14, SS = 3;
+  const meas = document.createElement('canvas').getContext('2d');
+  meas.font = `bold ${FS}px Georgia, 'Times New Roman', serif`;
+  const tw = Math.ceil(meas.measureText(text).width);
+  const c = document.createElement('canvas');
+  c.width = (FS + PAD * 2) * SS;
+  c.height = (tw + PAD * 2) * SS;
+  const g = c.getContext('2d');
+  g.scale(SS, SS);
+  g.fillStyle = HDR_CLR; g.fillRect(0, 0, FS + PAD * 2, tw + PAD * 2);
+  g.fillStyle = '#000';
+  g.font = `bold ${FS}px Georgia, 'Times New Roman', serif`;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.translate((FS + PAD * 2) / 2, (tw + PAD * 2) / 2);
+  g.rotate(-Math.PI / 2);
+  g.fillText(text, 0, 0);
+  const url = c.toDataURL('image/png');
+  _vLabelCache[text] = url;
+  return url;
+}
 const GRAY = '#F0F0F0';
 const GRAYBG = '#D0D0D0';
 const HDR_CLR = '#F0F0F0';
@@ -746,13 +912,17 @@ const gridLayout = {
 
 function pw(text, o) { return { text, ...o }; }
 function sec(text, pageBreak) { return { text, style: 'section', ...(pageBreak ? { pageBreak: 'before' } : {}) }; }
+// Hanging indent: fixed label column + full-width text so wrapped lines
+// align under the text start; uniform gap via the container margin (single
+// source of spacing instead of a margin buried on one column).
 function LOs(data) {
   return data.learning_objectives.map((lo, i) => ({
     columns: [
-      { text: `LO(${i + 1})`, bold: true, width: 60 },
-      { text: lo.text, width: 320, margin: [0, 0, 0, 8] },
+      { text: `LO.${i + 1}`, bold: true, width: 52 },
+      { text: lo.text, width: '*' },
     ],
-    columnGap: 6,
+    columnGap: 8,
+    margin: [0, 0, 0, 6],
   }));
 }
 function policyBlocks(text) {
@@ -812,12 +982,14 @@ function buildDoc(data) {
   C.push(sec('COURSE / CLASS INFORMATION'));
   C.push({
     table: {
-      widths: [72, 180, 72, 150],
+      // 2nd column fixed wide (course names / class lines need room), 4th takes
+      // the remainder â€” table still fills the full line width exactly.
+      widths: ['auto', 200, 'auto', '*'],
       body: [
         [{ text: 'School Name', bold: true, fillColor: HDR_CLR }, data.school_name, { text: 'Year/Semester', bold: true, fillColor: HDR_CLR }, data.year_semester],
         [{ text: 'Course Name', bold: true, fillColor: HDR_CLR }, data.course_name, { text: 'Course Code', bold: true, fillColor: HDR_CLR }, data.course_code],
         [{ text: 'Credits', bold: true, fillColor: HDR_CLR }, data.credits, { text: 'Pre-requisites', bold: true, fillColor: HDR_CLR }, data.prerequisites],
-        [{ text: 'Classes Time/\nLocation', bold: true, fillColor: HDR_CLR }, data.classes_time.split('\n').join('\n'), { text: 'Passing Grade', bold: true, fillColor: HDR_CLR }, data.passing_grade],
+        [{ text: 'Classes Time/\nLocation', bold: true, fillColor: HDR_CLR }, classesCell(data), { text: 'Passing Grade', bold: true, fillColor: HDR_CLR }, data.passing_grade],
       ],
     },
     layout: gridLayout,
@@ -837,7 +1009,7 @@ function buildDoc(data) {
     const taOf = k => k === 'Name' ? data.ta.name : k === 'E-mail' ? data.ta.email : k === 'Room' ? data.ta.room : data.ta.office_hours;
     C.push({
       table: {
-        widths: [60, 180, 180],
+        widths: ['auto', '*', '*'],
         body: [
           [
             { text: '', fillColor: HDR_CLR },
@@ -853,7 +1025,7 @@ function buildDoc(data) {
   } else {
     C.push({
       table: {
-        widths: [60, 360],
+        widths: ['auto', '*'],
         body: [
           [{ text: '', fillColor: HDR_CLR }, { text: 'Instructor', bold: true, fillColor: HDR_CLR }],
           ...instRows.map(([k, v]) => [{ text: k, bold: true, fillColor: HDR_CLR }, v]),
@@ -878,9 +1050,7 @@ function buildDoc(data) {
     C.push(sec('ASSESSMENT OF LEARNING OBJECTIVES', true));
     C.push({ text: 'The learning objectives of this course are assessed and achieved as follows:', margin: [0, 0, 0, 8] });
     
-    const numCols = data.lo_columns.length;
-    const colWidth = 280 / numCols;
-    const tableWidths = [150, ...data.lo_columns.map(() => colWidth)];
+    const tableWidths = ['auto', ...data.lo_columns.map(() => '*')];
     
     const body = [
       [
@@ -888,7 +1058,7 @@ function buildDoc(data) {
         ...data.lo_columns.map(col => ({ text: col.label, bold: true, fillColor: HDR_CLR, alignment: 'center' }))
       ],
       ...data.learning_objectives.map((lo, i) => [
-        { text: `LO(${i + 1})`, bold: true, fillColor: HDR_CLR, alignment: 'center' },
+        { text: `LO.${i + 1}`, bold: true, fillColor: HDR_CLR, alignment: 'center' },
         ...data.lo_columns.map(col => (lo[col.key] ? { image: CHECK, width: 12, alignment: 'center', margin: [0, 1, 0, 0] } : '')),
       ]),
     ];
@@ -914,7 +1084,7 @@ function buildDoc(data) {
       },
     ])];
     C.push({
-      table: { widths: [62, 360], body: tbBody },
+      table: { widths: [62, '*'], body: tbBody },
       layout: gridLayout,
       margin: [0, 0, 0, 14],
     });
@@ -931,7 +1101,9 @@ function buildDoc(data) {
         { text: w.reading || '', margin: [0, 6, 0, 6] }
       ]),
     ];
-    C.push({ table: { widths: [40, 240, 142], body: schedBody }, layout: gridLayout, margin: [0, 0, 0, 14] });
+    // NOTE: weighted stars like '2*' crash pdfmake 0.2.10's layout engine
+    // ("unsupported number"); plain '*' / 'auto' / fixed numbers only.
+    C.push({ table: { widths: ['auto', '*', 120], body: schedBody }, layout: gridLayout, margin: [0, 0, 0, 14] });
   }
 
   // ---- GRADING SCHEME
@@ -949,7 +1121,7 @@ function buildDoc(data) {
         'Throughout semester'
       ]);
     }
-    C.push({ table: { widths: [180, 100, 140], body }, layout: gridLayout, margin: [0, 0, 0, 14] });
+    C.push({ table: { widths: ['*', 'auto', 'auto'], body }, layout: gridLayout, margin: [0, 0, 0, 14] });
   }
 
   // ---- GRADING SCALE
@@ -972,7 +1144,7 @@ function buildDoc(data) {
   ];
   C.push({
     table: {
-      widths: [45, 40, 115, 220],
+      widths: ['auto', 'auto', 'auto', '*'],
       body: [
         ['Grade', 'GP', 'Percentage Range', 'Verbal Descriptor'].map(h => ({ text: h, bold: true, fillColor: HDR_CLR })),
         ...SCALE.map(r => [{ text: r[0], bold: true }, { text: r[1] }, { text: r[2] }, { text: r[3], italics: true }]),

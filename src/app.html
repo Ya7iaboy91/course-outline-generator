@@ -1059,7 +1059,7 @@ function missingFields() {
   // is extra credit on top and is excluded from the total.)
   const namedAS = S.assessments.filter(r => (r.name || '').trim());
   if (!namedAS.length) {
-    m.push('Grading Scheme (at least one assessment row with name and weight)');
+    m.push('Grading Scheme');
   } else {
     let total = 0, allValid = true;
     namedAS.forEach(r => {

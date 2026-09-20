@@ -408,7 +408,7 @@ const TAB_KEYS = {
   instructor: ['Instructor Name', 'Instructor Email', 'Teaching Assistant'],
   description: ['Course Description'],
   textbooks: ['Textbook'],
-  objectives: [], weekly: [], grading: [], policies: [],
+  objectives: [], weekly: [], grading: ['Grading Scheme'], policies: [],
 };
 function tabIssues() {
   const missing = missingFields();
@@ -679,12 +679,20 @@ const RENDERERS = {
       </span>
       <div style="flex:0 0 auto"><button class="delbtn" data-action="rm_as:${a.id}" ${S.assessments.length===1?'disabled':''}>Remove</button></div>
     </div>`).join('');
+    // Live total of named rows with valid weights (recomputed on each render).
+    const _named = S.assessments.filter(a => (a.name || '').trim());
+    const _parsed = _named.map(a => parseWeight(a.weight));
+    const _allOk = _named.length > 0 && _parsed.every(v => v !== null && v > 0);
+    const _total = _allOk ? parseFloat(_parsed.reduce((s, v) => s + v, 0).toFixed(2)) : null;
+    const _totalOk = _total !== null && Math.abs(_total - 100) <= 0.01;
+    const totalHtml = `<div style="font-size:14px;font-weight:700;margin:8px 0 0;color:${_totalOk ? '#1a7f37' : '#d1242f'}">Total: ${_total === null ? 'â€”' : _total + '%'}${_totalOk ? '' : ' (must equal 100%)'}</div>`;
     return `<div class="card card-grading">
       <div class="cardtitle">Specify the assessments that make up the final grade (e.g. Participation, Assignment(s), Quiz(zes), Midterms, Final Exam, Project).</div>
       <div class="caption">(TBA = To Be Announced on D2L.)</div>
       <div class="gridhead" style="gap:16px; margin-bottom:8px">${header}</div>
       ${rows}
       <div style="margin-top:6px"><button class="minibtn btn-add-lecture" data-action="add_as">+ Add row</button></div>
+      ${totalHtml}
       <hr class="rule">
       <div class="polrow">
         <label class="toggle" style="font-weight:600; font-size:14px; color:#333; cursor:pointer">
@@ -1000,6 +1008,17 @@ function collect() {
   POLICIES.forEach(p => data.policies[p.key] = { enabled: !!S.policies[p.key].enabled, text: S.policies[p.key].text });
   return data;
 }
+// Parses a weight cell: accepts "30", "30%", "12.5 %", "12,5%". Returns a number or null.
+function parseWeight(s) {
+  if (s == null) return null;
+  let t = String(s).trim();
+  if (!t) return null;
+  if (t.endsWith('%')) t = t.slice(0, -1).trim();
+  t = t.replace(',', '.');
+  if (!/^\d+(\.\d+)?$/.test(t)) return null;
+  const v = parseFloat(t);
+  return Number.isFinite(v) ? v : null;
+}
 function missingFields() {
   const m = [];
   if (!(S.school_name || '').trim()) m.push('School Name');
@@ -1021,6 +1040,26 @@ function missingFields() {
   const hasFilledLecture = S.classes_grid.some(r => !r.tut && r.day && r.slot && r.classroom && r.classroom.trim());
   if (!hasFilledLecture) {
     m.push('Classes Time / Location (at least one lecture row with Day, Slot, and Classroom completed)');
+  }
+  // Grading scheme: every named assessment needs a numeric weight and the total must be 100%.
+  // (Nameless rows are dropped from the PDF, so they are ignored here. The optional Bonus 5%
+  // is extra credit on top and is excluded from the total.)
+  const namedAS = S.assessments.filter(r => (r.name || '').trim());
+  if (!namedAS.length) {
+    m.push('Grading Scheme (at least one assessment row with name and weight)');
+  } else {
+    let total = 0, allValid = true;
+    namedAS.forEach(r => {
+      const name = (r.name || '').trim();
+      const w = parseWeight(r.weight);
+      if (!((r.weight || '').trim())) { m.push(`Grading Scheme weight missing for "${name}"`); allValid = false; }
+      else if (w === null || !(w > 0)) { m.push(`Grading Scheme invalid weight for "${name}" (use a number like 30%)`); allValid = false; }
+      else total += w;
+    });
+    if (allValid) {
+      const rounded = parseFloat(total.toFixed(2));
+      if (Math.abs(rounded - 100) > 0.01) m.push(`Grading Scheme weights total ${rounded}%, must equal 100%`);
+    }
   }
   return m;
 }

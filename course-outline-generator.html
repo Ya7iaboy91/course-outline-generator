@@ -1013,7 +1013,7 @@ function classesCell(data) {
   const rows = data.classes_rows || [];
   const grouped = rows.filter(r => r.group);
   if (!data.multi || !grouped.length) {
-    return { text: joinLines(rows.map(c => formatClassLine(c, true))) };
+    return { text: joinLines(rows.map(c => formatClassLine(c, true))), alignment: 'left' };
   }
   const order = [...new Set(grouped.map(r => r.group))];
   order.sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0));
@@ -1037,7 +1037,7 @@ function classesCell(data) {
       {
         columns: [
           { width: 18, image: vGroupLabel(titleFor(g)), margin: [0, 2, 0, 2] },
-          { width: '*', text: linesFor(g) },
+          { width: '*', text: linesFor(g), alignment: 'left' },
         ],
         columnGap: 8,
       },
@@ -1254,17 +1254,22 @@ const gridLayout = {
 
 function pw(text, o) { return { text, ...o }; }
 function sec(text, pageBreak) { return { text, style: 'section', ...(pageBreak ? { pageBreak: 'before' } : {}) }; }
-// LO layout: numbering starts after a 2cm indent (56.7pt), then a narrow
-// counter column and a tight gap before the text. Wrapped lines align under
-// the text start (hanging indent); uniform rhythm via the container margin.
+// LO layout: numbering starts after a 26.7pt indent (spacer column, NOT a
+// left margin â€” a page break inside a horizontally-margined node corrupts
+// pdfmake's availableWidth for every table laid out afterwards on that
+// page), then a narrow counter column and a tight gap before the text.
+// Wrapped lines align under the text start (hanging indent); uniform rhythm
+// via the container margin. Spacer is 22.7 + 4 gap = 26.7, matching the old
+// indent exactly.
 function LOs(data) {
   return data.learning_objectives.map((lo, i) => ({
     columns: [
+      { width: 22.7, text: '' },
       { text: `LO.${i + 1}`, bold: true, width: 36 },
       { text: lo.text, width: '*' },
     ],
     columnGap: 4,
-    margin: [26.7, 0, 0, 6],
+    margin: [0, 0, 0, 6],
   }));
 }
 function policyBlocks(text) {
@@ -1298,7 +1303,7 @@ function buildDoc(data) {
     pageSize: 'A4',
     pageMargins: [56.7, 56.7, 56.7, 56.7],
     info: { title: `Course Outline - ${data.course_code || 'draft'}`, author: data.instructor.name },
-    defaultStyle: { fontSize: 10, font: 'PTSerif' },
+    defaultStyle: { fontSize: 10, font: 'PTSerif', alignment: 'justify' },
     styles: {
       section: { fontSize: 15, bold: true, color: '#000066', margin: [0, 14, 0, 6] },
       sub: { fontSize: 11, bold: true, decoration: 'underline', margin: [0, 10, 0, 3] },
@@ -1517,11 +1522,11 @@ function buildDoc(data) {
     'Grades can be affected by missing a class as the instructor may include class participation marks and/or in-class assignments, or pop-up quizzes as part of the assessment plan for the course.',
     'If a student is absent for 25% or more of the class time, tutorials, labs, and/or mandatory office hours, the instructor may:'
   ]});
-  C.push({ ul: [
+  C.push({ columns: [{ width: 16, text: '' }, { width: '*', ul: [
     'Advise the student to drop the course if the absences occur before the drop date for a course.',
     'Give the student a grade of F for the course.',
     'Give the student an Incomplete grade for the course if the absences are caused by an approved documented illness or emergency.',
-  ], margin: [16, 0, 0, 6] });
+  ] }], columnGap: 0, margin: [0, 0, 0, 6] });
 
   C.push({ text: 'Code of Conduct for Students', style: 'sub' });
   C.push({ text: [{ text: 'The University of Prince Edward Island expects all students to comply with all University regulations and policies, all government laws, and any codes of ethics that govern students who are members of regulated professions. All students are strongly advised to become familiar with this code, which can be accessed at: ' }, { text: 'UofCanada Student Code of Conduct (Non-Academic).pdf', link: 'https://canwellnet.sharepoint.com/:b:/r/sites/UCEDL/IT%20Policies%20and%20Procedures/Student%20Affairs/Student%20Life%20Department/UofCanada%20Student%20Code%20of%20Conduct%20(Non-Academic).pdf?csf=1&web=1&e=molhng', color: '#0000EE' }], margin: [0, 0, 0, 8] });
@@ -1551,7 +1556,7 @@ function buildDoc(data) {
     'Once you come to class, it is expected that you will be there to stay. Please make sure you use the washroom before or after class.',
     'All students agree to abide by the following professional standards:'
   ]});
-  C.push({ ul: [
+  C.push({ columns: [{ width: 16, text: '' }, { width: '*', ul: [
     'Come to class on time and be prepared.',
     'If unable to attend class, contact instructor/students before the class.',
     'Be considerate and respectful of others\u2019 time, opinions, and rights.',
@@ -1559,7 +1564,7 @@ function buildDoc(data) {
     'Seek and provide feedback to/from peers and instructor.',
     'Commit to the highest standards of competence and academic integrity (work completed on time, motivated, dress appropriately etc.).',
     'Contribute to teamwork in a fair and balanced manner.',
-  ], margin: [16, 0, 0, 8] });
+  ] }], columnGap: 0, margin: [0, 0, 0, 8] });
 
   C.push({ text: 'WHILE EVERY EFFORT WILL BE MADE TO FOLLOW THE SCHEDULE, THE GRADING SCHEME AND THE ASSESSMENT DATE PLEASE NOTE THAT UNFORESEEN CIRCUMSTANCES CAN LEAD TO SOME CHANGES.', bold: true, italics: true, alignment: 'center', margin: [0, 18, 0, 0] });
 

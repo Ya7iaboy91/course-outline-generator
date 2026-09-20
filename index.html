@@ -125,12 +125,12 @@ select[data-bind]{height:38px}
       <img class="logo" id="sideLogo" alt="UPEI Cairo campus logo">
       <div>
         <h1>UPEI Style Course Outline Generator</h1>
-        <div class="cap">Fill the tabs, then generate and download a PDF.</div>
+        <div class="cap">Fill the tabs, then generate a PDF.</div>
+        <div class="hd">  </div>
       </div>
     </div>
 
     <div class="sticky">
-      <div class="hd">Generate &amp; Download</div>
       <button class="btn primary" id="genBtn">Generate PDF</button>
       <div class="msg" id="msg"></div>
     </div>
@@ -583,12 +583,12 @@ const RENDERERS = {
 
   objectives() {
     const rows = S.los.map((lo, i) => `<div class="rowblock">
-      <div class="lbl">LO ${i + 1}</div>
+      <div class="lbl${i === 0 ? ' req' : ''}">LO ${i + 1}</div>
       <div class="field" style="margin-bottom:8px">
         <textarea data-bind="lo:${lo.id}:text" placeholder="e.g. Apply single-variable and multivariable calculus techniques to find extrema" rows="2" style="width:100%; padding:8px 10px; border:1px solid #c9ccd2; border-radius:6px; font-size:14px; resize:vertical">${esc(lo.text)}</textarea>
       </div>
       <div style="text-align:right">
-        <button class="delbtn" data-action="rm_lo:${lo.id}" ${S.los.length===1?'disabled':''}>Remove</button>
+        <button class="delbtn" data-action="rm_lo:${lo.id}" ${(i === 0 || S.los.length === 1) ? 'disabled' : ''}>Remove</button>
       </div>
     </div>`).join('');
 
@@ -798,7 +798,7 @@ document.addEventListener('click', e => {
   const [name, id] = act.dataset.action.split(':');
   switch (name) {
     case 'add_lo': S.los.push(newLO()); saveLS(); render(); break;
-    case 'rm_lo': if (S.los.length > 1) { S.los = S.los.filter(r => r.id !== id); saveLS(); render(); } break;
+    case 'rm_lo': if (S.los.length > 1 && S.los[0].id !== id) { S.los = S.los.filter(r => r.id !== id); saveLS(); render(); } break;
     case 'add_tb': S.textbooks.push(newTB()); saveLS(); render(); break;
     case 'rm_tb': if (S.textbooks.length > 1) { S.textbooks = S.textbooks.filter(r => r.id !== id); saveLS(); render(); } break;
     case 'add_wk': S.weeks.push(newWK()); S.num_weeks = S.weeks.length; saveLS(); render(); break;

@@ -1027,7 +1027,7 @@ function weightTotal() {
 }
 function weightTotalHtml() {
   const { total, ok } = weightTotal();
-  return `<div id="weightTotal" style="font-size:14px;font-weight:700;margin:8px 0 0;color:${ok ? '#1a7f37' : '#d1242f'}">Total: ${total === null ? 'â€”' : total + '%'}${ok ? '' : ' (must equal 100%)'}</div>`;
+  return `<div id="weightTotal" style="font-size:14px;font-weight:700;margin:8px 0 0;color:${ok ? '#1a7f37' : '#d1242f'}">Total: ${total === null ? 'n/a' : total + '%'}${ok ? '' : ' (must equal 100%)'}</div>`;
 }
 // In-place refresh of the total line (no re-render, so typing never loses focus).
 // No-op unless the Grading tab is currently shown.
@@ -1036,7 +1036,7 @@ function refreshWeightTotal() {
   if (!el) return;
   const { total, ok } = weightTotal();
   el.style.color = ok ? '#1a7f37' : '#d1242f';
-  el.textContent = `Total: ${total === null ? 'â€”' : total + '%'}${ok ? '' : ' (must equal 100%)'}`;
+  el.textContent = `Total: ${total === null ? 'n/a' : total + '%'}${ok ? '' : ' (must equal 100%)'}`;
 }
 function missingFields() {
   const m = [];
@@ -1332,16 +1332,16 @@ function buildDoc(data) {
     C.push({ text: 'The grading scheme for this course is as follows:', margin: [0, 0, 0, 8] });
     const body = [
       ['Assessment Method', 'Weight', 'Due Date'].map(h => ({ text: h, bold: true, fillColor: HDR_CLR })),
-      ...data.assessments.map(a => [{ text: a.name, bold: true, fillColor: HDR_CLR }, a.weight, a.due]),
+      ...data.assessments.map(a => [{ text: a.name, bold: true }, a.weight, a.due]),
     ];
     if (data.bonus_5_marks) {
       body.push([
-        { text: 'Bonus Marks', bold: true, fillColor: HDR_CLR },
+        { text: 'Bonus Marks', bold: true },
         '5%',
         'Throughout semester'
       ]);
     }
-    C.push({ table: { widths: ['*', 'auto', 'auto'], body }, layout: gridLayout, margin: [0, 0, 0, 14] });
+    C.push({ table: { widths: [200, 'auto', '*'], body }, layout: gridLayout, margin: [0, 0, 0, 14] });
   }
 
   // ---- GRADING SCALE

@@ -910,7 +910,7 @@ function setMsg(text, kind) {
 // One class line as pdfmake spans. Lecture rows stay plain; the
 // "Tutorial/Lab, " prefix is bold with header shading. Group prefix is
 // optional so the grouped blocks can rely on their headers instead.
-function tutPrefix() { return { text: 'Tutorial/Lab, ', bold: true, background: HDR_CLR }; }
+function tutPrefix() { return { text: 'Tut./Lab, ', bold: true, background: HDR_CLR }; }
 function formatClassLine(c, withGroup) {
   const parts = [];
   if (withGroup && c.group) parts.push(`Group ${c.group} - `);
@@ -1273,7 +1273,7 @@ function buildDoc(data) {
     C.push(...LOs(data));
 
     // ---- ASSESSMENT OF LEARNING OBJECTIVES
-    C.push(sec('ASSESSMENT OF LEARNING OBJECTIVES', true));
+    C.push(sec('ASSESSMENT OF LEARNING OBJECTIVES'));
     C.push({ text: 'The learning objectives of this course are assessed and achieved as follows:', margin: [0, 0, 0, 8] });
     
     const tableWidths = ['auto', ...data.lo_columns.map(() => '*')];
@@ -1383,7 +1383,7 @@ function buildDoc(data) {
   // ---- Optional policies
   const enabled = POLICIES.filter(p => data.policies[p.key].enabled);
   if (enabled.length) {
-    C.push(sec(enabled[0].title, true));
+    C.push(sec(enabled[0].title));
     policyBlocks(data.policies[enabled[0].key].text).forEach(b => C.push(b));
     enabled.slice(1).forEach(p => {
       C.push(sec(p.title));

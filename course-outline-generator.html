@@ -1457,7 +1457,7 @@ function generate() {
     .map(([id, label], i) => ({ n: i + 1, label, list: issues[id] || [] }))
     .filter(t => t.list.length);
   if (flagged.length) {
-    setMsg('Required fields missing:\n' + flagged.map(t => `${t.n}. ${t.label}: ${t.list.map((x, j) => `${t.n}.${j + 1} ${x}`).join(', ')}`).join('\n'), 'err');
+    setMsg('Required fields missing:\n' + flagged.map(t => `${t.n}. ${t.label}\n` + t.list.map((x, j) => `  ${t.n}.${j + 1} ${x}`).join('\n')).join('\n'), 'err');
     return;
   }
   const data = collect();

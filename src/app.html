@@ -396,7 +396,7 @@ const TAB_KEYS = {
   instructor: ['Instructor Name', 'Instructor Email', 'Teaching Assistant'],
   description: ['Course Description'],
   textbooks: ['Textbook'],
-  objectives: [], weekly: [], grading: ['Grading Scheme'], policies: [],
+  objectives: ['Learning Objective'], weekly: ['Weekly Schedule'], grading: ['Grading Scheme'], policies: [],
 };
 function tabIssues() {
   const missing = missingFields();
@@ -564,8 +564,8 @@ const RENDERERS = {
 
   description() {
     return `<div class="card">
-            <div class="cardtitle">Course Description:</div>
-            <div class="field"><label class="req">Course Description</label><textarea data-bind="description" placeholder="Enter the course description here as per the UPEI course catalogue." rows="14">${esc(S.description)}</textarea></div>
+            <div class="cardtitle req">Course Description:</div>
+            <div class="field"><textarea data-bind="description" aria-label="Course Description" placeholder="Enter the course description here as per the UPEI course catalogue." rows="14">${esc(S.description)}</textarea></div>
     </div>`;
   },
 
@@ -1049,6 +1049,15 @@ function missingFields() {
   if (!(S.description || '').trim()) m.push('Course Description');
   if (!S.textbooks.length || S.textbooks.some(r => !(r.title || '').trim())) {
     m.push('Textbook Title');
+  }
+  if (S.textbooks.some(r => !(r.author || '').trim())) {
+    m.push('Textbook Author(s)');
+  }
+  if (!S.los.some(r => (r.text || '').trim())) {
+    m.push('Learning Objective');
+  }
+  if (!S.weeks.some(r => (r.topic || '').trim() || (r.reading || '').trim())) {
+    m.push('Weekly Schedule');
   }
   const hasFilledLecture = S.classes_grid.some(r => !r.tut && r.day && r.slot && r.classroom && r.classroom.trim());
   if (!hasFilledLecture) {

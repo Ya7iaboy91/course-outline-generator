@@ -1,0 +1,286 @@
+{
+  "school_name": "Mathematical and Computational Sciences",
+  "year_semester": "Fall 2026",
+  "course_name": "Introduction to Data Science",
+  "course_code": "AMS 1910",
+  "credits": "3",
+  "prerequisites": "None",
+  "classes_grid": [
+    {
+      "id": "r1",
+      "name": "Lecture 1",
+      "day": "Monday",
+      "slot": "",
+      "classroom": "B105",
+      "group": "1",
+      "tut": false
+    },
+    {
+      "id": "r2",
+      "name": "Lecture 2",
+      "day": "Thursday",
+      "slot": "",
+      "classroom": "B327",
+      "group": "1",
+      "tut": false
+    }
+  ],
+  "class_groups": [
+    "1"
+  ],
+  "passing_grade": "50%",
+  "has_ta": true,
+  "has_tutlab": false,
+  "instructor": {
+    "name": "Yahia Tohamy",
+    "email": "Yahia.tohamy@uofcanada.edu.eg",
+    "room": "B111",
+    "office_hours": "Open door policy"
+  },
+  "ta": {
+    "name": "Mohammed Ezzat",
+    "email": "Mohamed.Ezzat@uofcanada.edu.eg",
+    "room": "B318",
+    "office_hours": "Monday, 3rd slot; Wednesday, Break Time"
+  },
+  "description": "This course provides an introduction to data analysis, artificial intelligence and business intelligence tools, equipping students with the skills to explore, analyze, and communicate data-driven insights effectively. Students will learn to manipulate datasets, perform basic exploratory data analysis, and build interactive dashboards using widely available platforms. The course emphasizes hands-on practice with real-world datasets, focusing on data cleaning, visualization, and predictive modelling. Students will develop the ability to tell compelling stories with data, create professional-grade reports, and communicate actionable insights to diverse audiences. No prior coding experience is required.",
+  "lo_columns": [
+    {
+      "key": "exam",
+      "label": "Exams"
+    },
+    {
+      "key": "assignment",
+      "label": "Assignments"
+    },
+    {
+      "key": "activity",
+      "label": "Class Activities"
+    },
+    {
+      "key": "project",
+      "label": "Projects"
+    }
+  ],
+  "los": [
+    {
+      "id": "r3",
+      "text": "Explain core data analysis concepts including data types, data quality issues, and basic descriptive statistics",
+      "exam": true,
+      "assignment": true,
+      "activity": false,
+      "project": true
+    },
+    {
+      "id": "r4",
+      "text": "Import and connect to a variety of data sources including Excel, CSV, SQL, and web-based files",
+      "exam": true,
+      "assignment": true,
+      "activity": true,
+      "project": true
+    },
+    {
+      "id": "r5",
+      "text": "Clean and transform raw datasets using Power Query without writing code",
+      "exam": true,
+      "assignment": true,
+      "activity": true,
+      "project": true
+    },
+    {
+      "id": "r6",
+      "text": "Design a relational data model using star-schema principles and create basic DAX measures",
+      "exam": true,
+      "assignment": true,
+      "activity": true,
+      "project": true
+    },
+    {
+      "id": "r7",
+      "text": "Perform exploratory data analysis using interactive visualizations and slicers",
+      "exam": true,
+      "assignment": true,
+      "activity": true,
+      "project": true
+    },
+    {
+      "id": "r8",
+      "text": "Design and build professional multi-page dashboards that tell a compelling data story",
+      "exam": false,
+      "assignment": true,
+      "activity": true,
+      "project": true
+    },
+    {
+      "id": "r9",
+      "text": "Apply AI-powered Power BI features for lightweight predictive analysis and natural language querying",
+      "exam": false,
+      "assignment": true,
+      "activity": false,
+      "project": true
+    }
+  ],
+  "textbooks": [
+    {
+      "id": "r10",
+      "image": null,
+      "title": "Introduction to Data Science: Essential Concepts",
+      "author": "Peters Morgan",
+      "publisher": "CreateSpace Independent Publishing Platform",
+      "isbn": "9781722799571"
+    },
+    {
+      "id": "r11",
+      "image": null,
+      "title": "An Introduction to Data Science",
+      "author": "Jeffrey M. Stanton",
+      "publisher": "Syracuse University Libraries",
+      "isbn": "9780615969241"
+    },
+    {
+      "id": "r12",
+      "image": null,
+      "title": "Student's Course Manual: Introduction to Data Science",
+      "author": "Yahia Tohamy",
+      "publisher": "Partially in (2025)",
+      "isbn": "None"
+    },
+    {
+      "id": "r13",
+      "image": null,
+      "title": "Assignment Book: Exercise and Practice",
+      "author": "Yahia Tohamy",
+      "publisher": "Partially in (2025)",
+      "isbn": "None"
+    }
+  ],
+  "weeks": [
+    {
+      "id": "r14",
+      "topic": "Ch 0: Introducing Student Manual and course overview. Ch1: Data Collection and Preparation: What is data science? Data properties and scientist toolbox. Formulating questions. Overview of AI, ML, and BI. Data Vs Information. Data types: Quantitative vs. Qualitative, Cross-sectional vs. time series vs. panel. Level of measurements: Nominal, ordinal, interval, and ratio.",
+      "reading": ""
+    },
+    {
+      "id": "r15",
+      "topic": "Structured vs. unstructured data; quantitative vs. qualitative. Types of Variables: continuous vs. discrete, categorical vs. numerical. Data collection methods: Observational, survey, experiments, simulation.",
+      "reading": ""
+    },
+    {
+      "id": "r16",
+      "topic": "Data cleaning techniques: Handling missing values, correcting data types, removing duplicates, fixing structural errors, filtering data, grouping data, and data wrangling. Normalization (Min-Max, Z-score), standardization, redistribution, handling/encoding categorical variables, creating new features (e.g., from dates), transformation, formatting, outlier detection. Addressing data scale and range issues.",
+      "reading": ""
+    },
+    {
+      "id": "r17",
+      "topic": "Ch2: Exploratory Data Analysis (EDA): Understanding the data through: Descriptive statistics: Calculating summary statistics (mean, median, mode, standard deviation, variance, quartiles). Distribution analysis: histograms, skewness, kurtosis, density plots. Correlation analysis: Pearson, Spearman correlation coefficients, correlation matrices, and heatmaps.",
+      "reading": ""
+    },
+    {
+      "id": "r18",
+      "topic": "Ch3: Data Visualization: Univariate: bar chart, pie chart, line chart, scatter plot, histogram, boxplot. Bivariate: scatter plot, bubble chart, line chart. Multivariate data visualization: heatmap, bubble chart, parallel coordinates, pair plots.",
+      "reading": ""
+    },
+    {
+      "id": "r19",
+      "topic": "Dashboarding: Tableau, Power BI, interactive tools",
+      "reading": ""
+    },
+    {
+      "id": "r20",
+      "topic": "Ch 4: Predictive Analysis and Machine Learning: Introduction to predictive analysis and machine learning. Supervised vs. unsupervised learning. Regression and classification basics.",
+      "reading": ""
+    },
+    {
+      "id": "r21",
+      "topic": "Course project (Phase 1): Students will work on a real-world dataset to apply the concepts learned in the course. In this phase, students will focus on data collection, and cleaning techniques. They will submit a report detailing their data preparation process, including any challenges faced and how they were addressed.",
+      "reading": ""
+    },
+    {
+      "id": "r22",
+      "topic": "Course project (Phase 2): Students will continue working on their course project, focusing on exploratory data analysis (EDA). They will perform descriptive statistics, distribution analysis, and correlation analysis on their dataset. Students will submit a report summarizing their findings, including visualizations and insights derived from the EDA process.",
+      "reading": ""
+    },
+    {
+      "id": "r23",
+      "topic": "Course project (Phase 3): Students will continue working on their course project, focusing on data visualization. They will create interactive dashboards and visual representations of their data, highlighting key insights and trends. Students will submit their visualizations along with a brief report explaining their design choices and the insights derived from the data.",
+      "reading": ""
+    },
+    {
+      "id": "r24",
+      "topic": "Project presentations: Students will present their final projects to the class, showcasing their data analysis, visualizations, and insights. Each student will have a set time to present their work, followed by a Q&A session where they will answer questions from peers and the instructor. The presentations will be evaluated based on clarity, depth of analysis, creativity in visualization, and overall communication of findings.",
+      "reading": ""
+    },
+    {
+      "id": "r25",
+      "topic": "Reviewing edited drafts and finalizing the course projects.",
+      "reading": ""
+    }
+  ],
+  "num_weeks": 12,
+  "assessments": [
+    {
+      "id": "r26",
+      "name": "Assignments (3)",
+      "weight": "15",
+      "due": "Weeks 4, 8, 12",
+      "los": "LO1-LO7"
+    },
+    {
+      "id": "r27",
+      "name": "Quiz 1 (Data Fundamentals + Power Query)",
+      "weight": "10",
+      "due": "Week 3",
+      "los": "LO1-LO2"
+    },
+    {
+      "id": "r28",
+      "name": "Quiz 2 (Data Modeling + DAX)",
+      "weight": "10",
+      "due": "Week 6",
+      "los": "LO3"
+    },
+    {
+      "id": "r29",
+      "name": "Quiz 3 (Visualization + AI Features)",
+      "weight": "10",
+      "due": "Week 10",
+      "los": "LO4-LO5"
+    },
+    {
+      "id": "r30",
+      "name": "Midterm Project (EDA Dashboard)",
+      "weight": "20",
+      "due": "Week 8",
+      "los": "LO2-LO4"
+    },
+    {
+      "id": "r31",
+      "name": "Project (End-to-End Analysis)",
+      "weight": "30",
+      "due": "Week 12",
+      "los": "LO1-LO7"
+    },
+    {
+      "id": "r32",
+      "name": "Participation",
+      "weight": "5",
+      "due": "Ongoing",
+      "los": "All"
+    }
+  ],
+  "policies": {
+    "assignment policy": {
+      "enabled": true,
+      "text": "Attached to this manual is an assignment book containing exercises and problems for each chapter. This assignment book is not a standalone resource, but rather a companion to the manual. Students are expected to complete the assignments as part of their learning process. Assignments will be graded based on accuracy, completeness, and adherence to submission guidelines. Late submissions may incur penalties unless prior arrangements have been made with the instructor. Students are encouraged to seek help during office hours or through discussion forums if they encounter difficulties with the assignments.\n- Assignment 1: Data Fundamentals + Power Query — Due: TBA\n- Assignment 2: EDA + Dax — Due: TBA\n- Assignment 3: Data Visualization — Due: TBA"
+    },
+    "participation grading policy": {
+      "enabled": true,
+      "text": "The participation component of the course grades will be based on the following criteria:\n- Active participation in class discussions and activities.\n- Answering and interacting with questions posed by the instructor.\n- Completing the informal course surveys on D2L during the semester.\n- Improving the learning experience for instructors and students by indicating typos, mistakes, missing information, or unclear instructions in the Student Manual.\nInstructor reserves the right to adjust the participation grading scheme, participation question difficulty, or assessment methods if necessary, and students will be informed of any changes in a timely manner."
+    },
+    "bonus grading policy": {
+      "enabled": true,
+      "text": "The bonus component of the course grades will be based on the following criteria:\n- Answering challenge questions posed by the instructor during the class or take-home questions.\n- Each quiz, midterm, and final exam will have an extra challenge question that is not required to be answered but will be graded for bonus points if answered correctly.\n- Completing the formal final course evaluation at the end of the semester.\nInstructor reserves the right to adjust the bonus grading scheme, bonus question difficulty, or assessment methods if necessary, and students will be informed of any changes in a timely manner."
+    }
+  },
+  "bonus_5_marks": false
+}

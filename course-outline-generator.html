@@ -5,16 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>UPEI Style Course Outline Generator</title>
 <style>
-:root{--brand:#7a1d3d;--accent:#c8102e;--ink:#1c1c1e;--mut:#666;}
+:root{--brand:#7a1d3d;--accent:#c8102e;--ink:#1c1c1e;--mut:#666;--serif:Georgia,'Times New Roman',serif;--sh-sm:0 1px 2px rgba(28,28,30,.06),0 2px 8px rgba(28,28,30,.06);--sh-md:0 2px 4px rgba(28,28,30,.08),0 8px 24px rgba(28,28,30,.10);--trans:120ms ease;}
 *{box-sizing:border-box}
 body{margin:0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#f4f5f7;}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sidebar h1,.card .cardtitle,.card h3,.pols .polcard h3{font-family:var(--serif);letter-spacing:.01em}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.card{animation:none}}
 .layout{display:flex;min-height:100vh}
 .sidebar{width:250px;flex:0 0 250px;background:#2b2b33;color:#fff;padding:20px 18px;}
 .sidebar h1{font-size:20px;margin:0 0 4px;color:#fff;line-height:1.2}
 .sidebar .cap{font-size:12px;color:#b8b8c2;margin-bottom:22px}
 .sidebar .hd{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#9a9aa6;margin:20px 0 8px}
-.sidebar button.btn{display:block;width:100%;padding:10px 12px;margin:6px 0;border:none;border-radius:6px;font-size:14px;cursor:pointer;background:#3d3d48;color:#fff;text-align:left}
+.sidebar button.btn{display:block;width:100%;padding:10px 12px;margin:6px 0;border:none;border-radius:8px;font-size:14px;cursor:pointer;background:#3d3d48;color:#fff;text-align:left;transition:background var(--trans),transform 60ms ease}
 .sidebar button.btn:hover{background:#4a4a56}
+.sidebar button.btn:active{transform:translateY(1px)}
+.sidebar .brand{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;margin-bottom:4px}
+.sidebar .brand .logo{width:64px;height:64px;object-fit:contain;background:#fff;border-radius:10px;padding:4px;flex:0 0 auto}
+.sidebar .brand .cap{margin-bottom:0}
+.sidebar .sticky{position:sticky;top:12px}
+.sidebar .progress{display:flex;gap:7px;margin:6px 0 2px}
+.sidebar .pdot{width:10px;height:10px;border-radius:50%;background:#5a5a64}
+.sidebar .pdot.ok{background:#35c26e}
+.sidebar .pdot.err{background:#ff5a5a}
+.sidebar .save{font-size:11px;color:#8f8f9b;margin-top:8px;min-height:15px}
 .sidebar button.btn.primary{background:var(--accent);text-align:center;font-weight:600}
 .sidebar button.btn.primary:hover{background:#e01e3a}
 .sidebar .msg{font-size:12px;margin-top:14px;white-space:pre-wrap;line-height:1.45}
@@ -23,15 +37,18 @@ body{margin:0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var
 .sidebar .note{font-size:11px;color:#8f8f9b;margin-top:24px;line-height:1.5}
 .main{flex:1;padding:0 32px 60px;min-width:0}
 .tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid #ddd;margin-bottom:20px;position:sticky;top:0;background:#f4f5f7;z-index:5}
-.tabs .tb{padding:12px 16px;background:none;border:none;font-size:14px;cursor:pointer;color:var(--mut);border-bottom:3px solid transparent}
+.tabs .tb{padding:12px 16px;background:none;border:none;font-size:15px;font-weight:600;cursor:pointer;color:var(--mut);border-bottom:3px solid transparent;transition:color var(--trans),border-color var(--trans)}
 .tabs .tb:hover{color:var(--ink)}
-.tabs .tb.active{color:var(--brand);border-bottom-color:var(--accent);font-weight:600}
-.card{background:#fff;border:1px solid #e3e4e8;border-radius:8px;padding:22px 24px;max-width:1560px}
-.card.caption{font-size:12px;color:var(--mut);margin-top:-10px;margin-bottom:18px}
+.tabs .tb.active{color:var(--brand);border-bottom-color:var(--accent)}
+.tabs .tb .badge{display:inline-block;min-width:18px;height:18px;line-height:18px;padding:0 5px;margin-left:7px;border-radius:9px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;vertical-align:1px}
+.card{background:#fff;border:1px solid #e3e4e8;border-radius:10px;padding:22px 24px;max-width:1560px;box-shadow:var(--sh-sm);animation:fadeSlide .16s ease}
+.card .cardtitle{font-size:17px;font-weight:700;color:var(--ink);margin:0 0 14px}
+.card .caption{font-size:13px;color:var(--mut);margin:0 0 12px}
 .row{display:flex;gap:16px;margin:0 0 14px;flex-wrap:wrap}
 .field{flex:1 1 260px;min-width:260px}
 .field label{display:block;font-size:12.5px;font-weight:600;color:#333;margin:0 0 5px}
-.field input[type=text],.field input[type=number]{width:100%;padding:8px 10px;border:1px solid #c9ccd2;border-radius:6px;font-size:14px}
+.field input[type=text],.field input[type=number]{width:100%;height:38px;padding:8px 10px;border:1px solid #c9ccd2;border-radius:8px;font-size:14px}
+select[data-bind]{height:38px}
 .field textarea{width:100%;padding:8px 10px;border:1px solid #c9ccd2;border-radius:6px;font-size:14px;resize:vertical}
 .field input:focus,.field textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,16,46,.12)}
 .field input::placeholder,.field textarea::placeholder{font-size:12.5px;color:#8b8b95}
@@ -39,21 +56,62 @@ body{margin:0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var
 .toggle{display:flex;align-items:center;gap:10px;margin:6px 0 16px;cursor:pointer;font-size:14px}
 .toggle input{width:18px;height:18px;accent-color:var(--accent)}
 .rule{border:none;border-top:1px solid #e3e4e8;margin:20px 0}
-.rowblock{border:1px solid #e3e4e8;border-radius:8px;padding:14px 16px;margin:0 0 14px;background:#fbfbfc}
-.rowblock .lbl{font-weight:600;font-size:13px;margin-bottom:10px;color:#333}
-.minibtn{display:inline-block;padding:6px 12px;border:1px solid #c9ccd2;background:#fff;border-radius:6px;cursor:pointer;font-size:13px;margin-top:8px}
-.minibtn:hover{background:#f2f2f4}
-.delbtn{display:inline-block;padding:6px 12px;border:1px solid #e0c2c2;background:#fff;color:#a33;border-radius:6px;cursor:pointer;font-size:13px}
+.rowblock{border:1px solid #e3e4e8;border-radius:10px;padding:16px;margin:0 0 14px;background:#fff;box-shadow:var(--sh-sm)}
+.rowblock .lbl{font-weight:700;font-size:14px;margin-bottom:10px;color:#333}
+.minibtn{display:inline-block;padding:6px 12px;border:1px solid #c9ccd2;background:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;margin-top:8px;transition:background var(--trans),border-color var(--trans),transform 60ms ease}
+.minibtn:hover{background:#eef0f3;border-color:#a9adb6}
+.minibtn:active{transform:translateY(1px)}
+.minibtn:disabled{opacity:.5;cursor:not-allowed}
+.delbtn{display:inline-block;padding:6px 12px;border:1px solid #e0c2c2;background:transparent;color:#a33;border-radius:8px;cursor:pointer;font-size:13px;transition:background var(--trans),transform 60ms ease}
 .delbtn:hover{background:#fbeaea}
-.delbtn:disabled{color:#bbb;border-color:#e3e4e8;cursor:not-allowed}
+.delbtn:active{transform:translateY(1px)}
+.delbtn:disabled{color:#bbb;border-color:#e3e4e8;cursor:not-allowed;opacity:.5}
 .preview img{width:72px;height:auto;border:1px solid #ddd;border-radius:4px;display:block;margin-bottom:6px}
 .coverbox{display:flex;align-items:flex-start;gap:14px}
 .coverbox .uploads{display:flex;flex-direction:column;gap:6px}
 .checkrow{display:flex;align-items:center;gap:8px;font-size:13px;margin:4px 0}
 .checkrow input{width:16px;height:16px;accent-color:var(--accent)}
-.gridhead{display:flex;font-size:12.5px;font-weight:600;color:#333;margin:14px 0 8px;gap:8px}
+.gridhead{display:flex;font-size:14px;font-weight:700;color:#333;margin:14px 0 8px;gap:8px}
+/* Course Info tab only: normal-weight labels, slightly larger inputs, colored action buttons */
+.card-courseinfo .row{flex-wrap:nowrap}
+.card-courseinfo .field{flex:0 0 calc(50% - 8px);min-width:0}
+.card-courseinfo .field:only-child{flex:1 1 100%}
+.card-courseinfo .field label{font-weight:400}
+.card-courseinfo .field input[type=text],.card-courseinfo .field input[type=number]{width:50%;height:44px;font-size:15px}
+/* Auto-expanding textareas: long text wraps instead of cutting off horizontally */
+.card-courseinfo .field textarea{width:50%;min-height:44px;font-size:15px;line-height:1.45;padding:10px;border:1px solid #c9ccd2;border-radius:8px;resize:none;overflow:hidden;field-sizing:content}
+.card-courseinfo .field textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,16,46,.12)}
+@media(max-width:700px){.card-courseinfo .row{flex-wrap:wrap}}
+.card-courseinfo select[data-bind]{height:44px;font-size:15px}
+.card-courseinfo .gridhead{font-weight:400}
+.card-courseinfo .gridhead span{font-weight:400}
+.btn-add-lecture{border-color:#1a7f37 !important;color:#1a7f37 !important}
+.btn-add-lecture:hover{background:#e6f4ea !important;border-color:#1a7f37 !important}
+.btn-rm-lecture{border-color:#d1242f !important;color:#d1242f !important;background:transparent}
+.btn-rm-lecture:hover{background:#fdeaea !important}
+.btn-add-group{border-color:#0969da !important;color:#0969da !important}
+.btn-add-group:hover{background:#e8f0fe !important;border-color:#0969da !important}
+/* Instructor tab: same fill-box treatment as Course Info (50% width, auto-growing) */
+.card-instructor .row{flex-wrap:nowrap}
+.card-instructor .field{flex:0 0 calc(50% - 8px);min-width:0}
+.card-instructor .field:only-child{flex:1 1 100%}
+.card-instructor .field input[type=text],.card-instructor .field input[type=number]{width:50%;height:44px;font-size:15px}
+.card-instructor .field textarea{width:50%;min-height:44px;font-size:15px;line-height:1.45;padding:10px;border:1px solid #c9ccd2;border-radius:8px;resize:none;overflow:hidden;field-sizing:content}
+.card-instructor .field textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,16,46,.12)}
+@media(max-width:700px){.card-instructor .row{flex-wrap:wrap}}
+/* Textbooks tab: same fill-box treatment (50% width, auto-growing) */
+.card-textbooks .row{flex-wrap:nowrap}
+.card-textbooks .field{flex:0 0 calc(50% - 8px);min-width:0}
+.card-textbooks .field:only-child{flex:1 1 100%}
+.card-textbooks .field input[type=text],.card-textbooks .field input[type=number]{width:50%;height:44px;font-size:15px}
+.card-textbooks .field textarea{width:50%;min-height:44px;font-size:15px;line-height:1.45;padding:10px;border:1px solid #c9ccd2;border-radius:8px;resize:none;overflow:hidden;field-sizing:content}
+.card-textbooks .field textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,16,46,.12)}
+@media(max-width:700px){.card-textbooks .row{flex-wrap:wrap}}
+/* Grading tab: cells are already fractional columns, so boxes fill the cell and grow vertically */
+.card-grading textarea[data-autogrow]{display:block;width:100%;box-sizing:border-box;min-height:38px;font-size:14px;line-height:1.45;padding:8px 10px;border:1px solid #c9ccd2;border-radius:6px;resize:none;overflow:hidden;field-sizing:content}
+.card-grading textarea[data-autogrow]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,16,46,.12)}
 .pols .polcard{border:1px solid #e3e4e8;border-radius:8px;padding:16px;margin-bottom:16px}
-.pols .polcard h3{margin:0 0 4px;font-size:15px}
+.pols .polcard h3{margin:0 0 4px;font-size:16px;font-weight:700}
 .polrow{display:flex;align-items:center;gap:10px;font-size:13.5px;margin:6px 0 10px}
 .polrow input{width:16px;height:16px;accent-color:var(--accent)}
 .foot{font-size:11.5px;color:var(--mut);margin-top:26px}
@@ -63,12 +121,23 @@ body{margin:0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:var
 <body>
 <div class="layout">
   <aside class="sidebar">
-    <h1>UPEI Style Course Outline Generator</h1>
-    <div class="cap">Fill the tabs, then generate and download a PDF.</div>
+    <div class="brand">
+      <img class="logo" id="sideLogo" alt="UPEI Cairo campus logo">
+      <div>
+        <h1>UPEI Style Course Outline Generator</h1>
+        <div class="cap">Fill the tabs, then generate and download a PDF.</div>
+      </div>
+    </div>
 
-    <div class="hd">Generate &amp; Download</div>
-    <button class="btn primary" id="genBtn">Generate PDF</button>
-    <div class="msg" id="msg"></div>
+    <div class="sticky">
+      <div class="hd">Generate &amp; Download</div>
+      <button class="btn primary" id="genBtn">Generate PDF</button>
+      <div class="msg" id="msg"></div>
+    </div>
+
+    <div class="hd">Progress</div>
+    <div class="progress" id="progress"></div>
+    <div class="save" id="saveState"></div>
 
     <div class="hd">New Form</div>
     <button class="btn" id="resetBtn">Start Over</button>
@@ -233,6 +302,8 @@ function saveLS() {
   idbSet(LS_KEY, JSON.stringify(S)).catch(() => {
     try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) { /* ignore */ }
   });
+  stampSaved();
+  refreshStatus();
 }
 function normalizeState(o) {
   const d = defaultState();
@@ -330,12 +401,68 @@ const TABS = [
   ['policies', 'Optional Policies'],
 ];
 
+// Maps required-field messages onto tabs for badges + progress dots.
+// Keys must stay in sync with missingFields() message prefixes.
+const TAB_KEYS = {
+  courseinfo: ['School Name', 'Year/Semester', 'Course Name', 'Course Code', 'Credits', 'Pre-requisites', 'Classes Time'],
+  instructor: ['Instructor Name', 'Instructor Email', 'Teaching Assistant'],
+  description: ['Course Description'],
+  textbooks: ['Textbook'],
+  objectives: [], weekly: [], grading: [], policies: [],
+};
+function tabIssues() {
+  const missing = missingFields();
+  const out = {};
+  TABS.forEach(([id]) => { out[id] = []; });
+  missing.forEach(m => {
+    for (const tab of Object.keys(TAB_KEYS)) {
+      if (TAB_KEYS[tab].some(k => m.startsWith(k))) { out[tab].push(m); break; }
+    }
+  });
+  return out;
+}
+function tabsHtml(issues) {
+  return TABS.map(([id, label]) => {
+    const n = (issues[id] || []).length;
+    return `<button class="tb ${id===activeTab?'active':''}" data-tab="${id}">${esc(label)}${n ? `<span class="badge">${n}</span>` : ''}</button>`;
+  }).join('');
+}
+function renderProgress(issues) {
+  const el = document.getElementById('progress');
+  if (!el) return;
+  el.innerHTML = TABS.map(([id, label]) => {
+    const n = (issues[id] || []).length;
+    return `<span class="pdot ${n ? 'err' : 'ok'}" title="${esc(label)}${n ? ` â€” ${n} missing` : ' â€” complete'}"></span>`;
+  }).join('');
+}
+// Focus-safe: rebuilds only the tab strip + dots (never the inputs).
+function refreshStatus() {
+  const issues = tabIssues();
+  const tabsEl = document.getElementById('tabs');
+  if (tabsEl) tabsEl.innerHTML = tabsHtml(issues);
+  renderProgress(issues);
+}
+function stampSaved() {
+  const el = document.getElementById('saveState');
+  if (!el) return;
+  const t = new Date(), p = n => String(n).padStart(2, '0');
+  el.textContent = `Saved ${p(t.getHours())}:${p(t.getMinutes())}:${p(t.getSeconds())}`;
+}
+
+// Auto-grow textareas so wrapped text stays visible (fallback where CSS field-sizing isn't supported).
+function autogrow(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+function autogrowAll() {
+  document.querySelectorAll('textarea[data-autogrow]').forEach(autogrow);
+}
+
 function render() {
-  const tabs = document.getElementById('tabs');
-  tabs.innerHTML = TABS.map(([id, label]) =>
-    `<button class="tb ${id===activeTab?'active':''}" data-tab="${id}">${esc(label)}</button>`).join('');
+  refreshStatus();
   const content = document.getElementById('content');
   content.innerHTML = RENDERERS[activeTab]();
+  autogrowAll();
   window.scrollTo(0, 0);
 }
 
@@ -346,7 +473,7 @@ const RENDERERS = {
     const groups = (S.class_groups && S.class_groups.length) ? S.class_groups : ['1'];
     const rowHtml = (row) => `
       <div class="row" style="align-items:center; gap:12px; margin-bottom:10px">
-        <div style="flex:1; min-width:80px; font-weight:600; font-size:13.5px">${esc(row.tut ? 'Tutorial/Lab' : row.name)}</div>
+        <div style="flex:1; min-width:80px; font-weight:400; font-size:14px">${esc(row.tut ? 'Tutorial/Lab' : row.name)}</div>
         <div style="flex:2; min-width:140px">
           <select data-bind="cg:${row.id}:day" style="width:100%; padding:8px 10px; border:1px solid #c9ccd2; border-radius:6px; font-size:14px">
             <option value="">-- Choose Day --</option>
@@ -363,7 +490,7 @@ const RENDERERS = {
           <input type="text" data-bind="cg:${row.id}:classroom" value="${esc(row.classroom)}" placeholder="B105" style="width:100%; padding:8px 10px; border:1px solid #c9ccd2; border-radius:6px; font-size:14px">
         </div>
         <div style="flex:0 0 auto">
-          <button class="delbtn" data-action="rm_cg:${row.id}" style="padding: 4px 10px" ${S.classes_grid.length===1?'disabled':''}>&times;</button>
+          <button class="delbtn btn-rm-lecture" data-action="rm_cg:${row.id}" style="padding: 4px 10px" ${S.classes_grid.length===1?'disabled':''}>&times;</button>
         </div>
       </div>`;
     // One titled section per group; ungrouped rows (old saves) fall into the first.
@@ -373,82 +500,83 @@ const RENDERERS = {
       const tuts = rows.filter(r => r.tut);
       return `
       <div style="margin:14px 0 8px; display:flex; align-items:center; gap:10px">
-        <span style="font-weight:700; font-size:14px">Group ${esc(g)}${g===groups[0] ? ' ' : ''}</span>
+        <span style="font-weight:700; font-size:16px">Group ${esc(g)}${g===groups[0] ? ' ' : ''}</span>
         <button class="delbtn" data-action="rm_group:${esc(g)}" style="padding:2px 10px" ${(groups.length===1 || g===groups[0])?'disabled':''}>Remove</button>
       </div>
-      <div class="gridhead" style="align-items:center; gap:12px; margin-bottom:6px">
-        <span style="flex:1; min-width:80px">Lecture #</span>
-        <span style="flex:2; min-width:140px">Day</span>
-        <span style="flex:1.5; min-width:100px">Slot</span>
-        <span style="flex:2; min-width:140px">Classroom</span>
+      <div class="gridhead" style="align-items:center; gap:12px; margin-bottom:6px; font-weight:400">
+        <span style="flex:1; min-width:80px; font-weight:400"></span>
+        <span style="flex:2; min-width:140px; font-weight:400">Day</span>
+        <span style="flex:1.5; min-width:100px; font-weight:400">Slot</span>
+        <span style="flex:2; min-width:140px; font-weight:400">Classroom</span>
         <span style="flex:0 0 auto; width:36px"></span>
       </div>
       ${lectures.map(rowHtml).join('')}
       ${tuts.map(rowHtml).join('')}
       <div style="margin-top:10px">
-        <button class="minibtn" data-action="add_cg:${esc(g)}" style="margin-top:0">+ Add Lecture</button>
+        <button class="minibtn btn-add-lecture" data-action="add_cg:${esc(g)}" style="margin-top:0">+ Add Lecture</button>
       </div>`;
-    }).join('');
+    }).join('<hr class="rule">');
 
-    return `<div class="card">
-      <div class="caption">Course Information</div>
+    return `<div class="card card-courseinfo">
+      <div class="cardtitle">Course Information</div>
       <!-- Wrapped in a row for margin spacing -->
       <div class="row">
-        <div class="field"><label class="req">School Name</label><input data-bind="school_name" value="${esc(S.school_name)}"></div>
+        <div class="field"><label class="req">School Name</label><textarea data-bind="school_name" rows="1" data-autogrow>${esc(S.school_name)}</textarea></div>
       </div>
       <div class="row">
-        <div class="field"><label class="req">Year/Semester</label><input data-bind="year_semester" placeholder="e.g. Fall 2026" value="${esc(S.year_semester)}"></div>
-        <div class="field"><label class="req">Course Name</label><input data-bind="course_name" placeholder="e.g. Introduction to Data Science" value="${esc(S.course_name)}"></div>
+        <div class="field"><label class="req">Year/Semester</label><textarea data-bind="year_semester" placeholder="e.g. Fall 2026" rows="1" data-autogrow>${esc(S.year_semester)}</textarea></div>
+        <div class="field"><label class="req">Course Name</label><textarea data-bind="course_name" placeholder="e.g. Introduction to Data Science" rows="1" data-autogrow>${esc(S.course_name)}</textarea></div>
       </div>
       <div class="row">
-        <div class="field"><label class="req">Course Code</label><input data-bind="course_code" placeholder="e.g. AMS 1910" value="${esc(S.course_code)}"></div>
-        <div class="field"><label class="req">Credits</label><input data-bind="credits" placeholder="e.g. 3" value="${esc(S.credits)}"></div>
+        <div class="field"><label class="req">Course Code</label><textarea data-bind="course_code" placeholder="e.g. AMS 1910" rows="1" data-autogrow>${esc(S.course_code)}</textarea></div>
+        <div class="field"><label class="req">Credits</label><textarea data-bind="credits" placeholder="e.g. 3" rows="1" data-autogrow>${esc(S.credits)}</textarea></div>
       </div>
       <div class="row">
-        <div class="field"><label class="req">Pre-requisites</label><input data-bind="prerequisites" placeholder="e.g. AMS 1900 or None" value="${esc(S.prerequisites)}"></div>
-        <div class="field"><label>Passing Grade</label><input data-bind="passing_grade" value="${esc(S.passing_grade)}"></div>
+        <div class="field"><label class="req">Pre-requisites</label><textarea data-bind="prerequisites" placeholder="e.g. AMS 1900 or None" rows="1" data-autogrow>${esc(S.prerequisites)}</textarea></div>
+        <div class="field"><label>Passing Grade</label><textarea data-bind="passing_grade" rows="1" data-autogrow>${esc(S.passing_grade)}</textarea></div>
       </div>
-      
-      <hr class="rule">
+    </div>
+    <div class="card card-courseinfo" style="margin-top:16px">
       <div style="margin-bottom:12px">
-        <label style="display:block; font-size:14px; font-weight:600; color:#333; margin-bottom:6px" class="req">Classes Time / Location</label>
+        <label style="display:block; font-size:16px; font-weight:700; color:#333; margin-bottom:6px" class="req">Classes Time / Location</label>
         <div class="caption" style="margin-bottom:12px">At least 1 row must be completed.</div>
         <label class="toggle"><input type="checkbox" data-bind="has_tutlab" ${S.has_tutlab?'checked':''}> This course has tutorial / lab sessions</label>
         ${sections}
         <div style="margin-top:14px">
-          <button class="minibtn" data-action="add_group" style="margin-top:0" ${groups.length>=MAX_GROUPS?'disabled':''}>+ Add Group</button>
+          <button class="minibtn btn-add-group" data-action="add_group" style="margin-top:0" ${groups.length>=MAX_GROUPS?'disabled':''}>+ Add Group</button>
         </div>
       </div>
     </div>`;
   },
 
   instructor() {
-    return `<div class="card">
+    return `<div class="card card-instructor">
       <label class="toggle"><input type="checkbox" data-bind="has_ta" ${S.has_ta?'checked':''}> This course has a Teaching Assistant (TA)</label>
-      <h3 style="margin:6px 0 10px;font-size:14px;color:#333">Instructor</h3>
+      <h3 style="margin:6px 0 10px;font-size:16px;font-weight:700;color:#333">Instructor</h3>
       <div class="row">
-        <div class="field"><label class="req">Name</label><input data-bind="instructor.name" value="${esc(S.instructor.name)}"></div>
-        <div class="field"><label class="req">E-mail</label><input data-bind="instructor.email" value="${esc(S.instructor.email)}"></div>
+        <div class="field"><label class="req">Name</label><textarea data-bind="instructor.name" rows="1" data-autogrow>${esc(S.instructor.name)}</textarea></div>
+        <div class="field"><label class="req">E-mail</label><textarea data-bind="instructor.email" rows="1" data-autogrow>${esc(S.instructor.email)}</textarea></div>
       </div>
       <div class="row">
-        <div class="field"><label>Office Room</label><input data-bind="instructor.room" placeholder="e.g. B105" value="${esc(S.instructor.room)}"></div>
-        <div class="field"><label>Office Hours</label><input data-bind="instructor.office_hours" placeholder="e.g. Monday, 2nd slot" value="${esc(S.instructor.office_hours)}"></div>
+        <div class="field"><label>Office Room</label><textarea data-bind="instructor.room" placeholder="e.g. B105" rows="1" data-autogrow>${esc(S.instructor.room)}</textarea></div>
+        <div class="field"><label>Office Hours</label><textarea data-bind="instructor.office_hours" placeholder="e.g. Monday, 2nd slot" rows="1" data-autogrow>${esc(S.instructor.office_hours)}</textarea></div>
       </div>
       ${S.has_ta ? `<hr class="rule">
-      <h3 style="margin:0 0 10px;font-size:14px;color:#333">Teaching Assistant</h3>
+      <h3 style="margin:0 0 10px;font-size:16px;font-weight:700;color:#333">Teaching Assistant</h3>
       <div class="row">
-        <div class="field"><label class="req">Name</label><input data-bind="ta.name" value="${esc(S.ta.name)}"></div>
-        <div class="field"><label class="req">E-mail</label><input data-bind="ta.email" value="${esc(S.ta.email)}"></div>
+        <div class="field"><label class="req">Name</label><textarea data-bind="ta.name" rows="1" data-autogrow>${esc(S.ta.name)}</textarea></div>
+        <div class="field"><label class="req">E-mail</label><textarea data-bind="ta.email" rows="1" data-autogrow>${esc(S.ta.email)}</textarea></div>
       </div>
       <div class="row">
-        <div class="field"><label>Office Room</label><input data-bind="ta.room" placeholder="e.g. B105" value="${esc(S.ta.room)}"></div>
-        <div class="field"><label>Office Hours</label><input data-bind="ta.office_hours" value="${esc(S.ta.office_hours)}"></div>
+        <div class="field"><label>Office Room</label><textarea data-bind="ta.room" placeholder="e.g. B105" rows="1" data-autogrow>${esc(S.ta.room)}</textarea></div>
+        <div class="field"><label>Office Hours</label><textarea data-bind="ta.office_hours" rows="1" data-autogrow>${esc(S.ta.office_hours)}</textarea></div>
       </div>` : ''}
     </div>`;
   },
 
   description() {
     return `<div class="card">
+            <div class="cardtitle">Course Description:</div>
             <div class="field"><label class="req">Course Description</label><textarea data-bind="description" placeholder="Enter the course description here as per the UPEI course catalogue." rows="14">${esc(S.description)}</textarea></div>
     </div>`;
   },
@@ -465,7 +593,7 @@ const RENDERERS = {
     </div>`).join('');
 
     const gridHead = `<div class="gridhead" style="align-items:center; gap:8px">
-      <span style="flex:1; font-weight:600; font-size:13px">Objective</span>
+      <span style="flex:1; font-weight:700; font-size:14px">Objective</span>
       ${S.lo_columns.map(col => `
         <span style="flex:1.2; display:flex; align-items:center; gap:4px; min-width:80px">
           <input type="text" data-bind="loc:${col.key}" value="${esc(col.label)}" style="width:100%; font-size:12px; font-weight:600; padding:4px 6px; border:1px solid #c9ccd2; border-radius:4px" placeholder="Column title">
@@ -475,18 +603,18 @@ const RENDERERS = {
     </div>`;
 
     const matrix = S.los.map((lo, i) => `<div class="row" style="align-items:center; gap:8px; margin-bottom:6px">
-      <span style="flex:1; font-size:13px;font-weight:600">LO ${i + 1}</span>
+      <span style="flex:1; font-size:14px;font-weight:700">LO ${i + 1}</span>
       ${S.lo_columns.map(col => `<span style="flex:1.2" class="checkrow"><input type="checkbox" data-bind="lo:${lo.id}:${col.key}" ${lo[col.key]?'checked':''}></span>`).join('')}
     </div>`).join('');
 
     return `<div class="card">
-      <div class="caption">Insert the course learning objectives.</div>
+      <div class="cardtitle">Insert the course learning objectives.</div>
       ${rows}
-      <div><button class="minibtn" data-action="add_lo">+ Add learning objective</button></div>
+      <div><button class="minibtn btn-add-lecture" data-action="add_lo">+ Add learning objective</button></div>
       <hr class="rule">
       <div style="display:flex; justify-content:space-between; align-items:center; margin:0 0 10px">
-        <h3 style="font-size:15px; margin:0">Assessment of Learning Objectives</h3>
-        <button class="minibtn" data-action="add_loc" style="margin-top:0">+ Add Assessment Column</button>
+        <h3 style="font-size:16px; font-weight:700; margin:0">Assessment of Learning Objectives</h3>
+        <button class="minibtn btn-add-lecture" data-action="add_loc" style="margin-top:0">+ Add Assessment Column</button>
       </div>
       <div class="caption">Click column headers to rename assessment types (e.g., Exams, Assignments, etc.). Check the boxes to map LOs to assessments.</div>
       ${gridHead}${matrix}
@@ -503,19 +631,19 @@ const RENDERERS = {
         </div>
       </div>
       <div class="row" style="margin-top:12px">
-        <div class="field"><label class="req">Title</label><input data-bind="tb:${tb.id}:title" placeholder="Introduction to Linear Algebra" value="${esc(tb.title)}"></div>
-        <div class="field"><label>Author(s)</label><input data-bind="tb:${tb.id}:author" placeholder="Jane Smith" value="${esc(tb.author)}"></div>
+        <div class="field"><label class="req">Title</label><textarea data-bind="tb:${tb.id}:title" placeholder="Introduction to Linear Algebra" rows="1" data-autogrow>${esc(tb.title)}</textarea></div>
+        <div class="field"><label>Author(s)</label><textarea data-bind="tb:${tb.id}:author" placeholder="Jane Smith" rows="1" data-autogrow>${esc(tb.author)}</textarea></div>
       </div>
       <div class="row">
-        <div class="field"><label>Publisher</label><input data-bind="tb:${tb.id}:publisher" placeholder="Academic Press" value="${esc(tb.publisher)}"></div>
-        <div class="field"><label>ISBN-13</label><input data-bind="tb:${tb.id}:isbn" placeholder="978-0123456789" value="${esc(tb.isbn)}"></div>
+        <div class="field"><label>Publisher</label><textarea data-bind="tb:${tb.id}:publisher" placeholder="Academic Press" rows="1" data-autogrow>${esc(tb.publisher)}</textarea></div>
+        <div class="field"><label>ISBN-13</label><textarea data-bind="tb:${tb.id}:isbn" placeholder="978-0123456789" rows="1" data-autogrow>${esc(tb.isbn)}</textarea></div>
       </div>
       <button class="delbtn" data-action="rm_tb:${tb.id}" ${S.textbooks.length===1?'disabled':''}>Remove</button>
     </div>`).join('');
-    return `<div class="card">
-      <div class="caption">At least one textbook is required.</div>
+    return `<div class="card card-textbooks">
+      <div class="cardtitle">At least one textbook is required.</div>
       ${rows}
-      <div><button class="minibtn" data-action="add_tb">+ Add textbook</button></div>
+      <div><button class="minibtn btn-add-lecture" data-action="add_tb">+ Add textbook</button></div>
     </div>`;
   },
 
@@ -536,24 +664,27 @@ const RENDERERS = {
         <div class="field" style="max-width:220px"><label>Number of weeks</label><input type="number" min="1" max="30" data-bind="num_weeks" data-sync="weeks" value="${Number(S.num_weeks)}"></div>
       </div>
       ${rows}
-      <div><button class="minibtn" data-action="add_wk">+ Add week</button></div>
+      <div><button class="minibtn btn-add-lecture" data-action="add_wk">+ Add week</button></div>
     </div>`;
   },
 
   grading() {
-    const header = ['Assessment Method', 'Weight', 'Due Date'].map(h => `<span style="flex:1.2; font-size:12.5px; font-weight:600">${esc(h)}</span>`).join('');
-    const rows = S.assessments.map((a) => `<div class="row" style="align-items:center; gap:8px; margin-bottom:10px">
-      <span style="flex:1.5; min-width:180px"><input data-bind="as:${a.id}:name" placeholder="e.g. Assignments" value="${esc(a.name)}"></span>
-      <span style="flex:1.2; min-width:140px"><input data-bind="as:${a.id}:weight" placeholder="e.g. 30%" value="${esc(a.weight)}"></span>
-      <span style="flex:1.5; min-width:180px"><input data-bind="as:${a.id}:due" placeholder="e.g. 2026-09-15 or TBA" value="${esc(a.due)}"></span>
+    const header = ['Assessment Method', 'Weight', 'Due Date'].map(h => `<span style="flex:1.2; font-size:14px; font-weight:700">${esc(h)}</span>`).join('');
+    const rows = S.assessments.map((a) => `<div class="row" style="align-items:flex-start; gap:8px; margin-bottom:10px">
+      <span style="flex:1.5; min-width:180px"><textarea data-bind="as:${a.id}:name" placeholder="e.g. Assignments" rows="1" data-autogrow>${esc(a.name)}</textarea></span>
+      <span style="flex:1.2; min-width:140px"><textarea data-bind="as:${a.id}:weight" placeholder="e.g. 30%" rows="1" data-autogrow>${esc(a.weight)}</textarea></span>
+      <span style="flex:1.5; min-width:180px">
+        <textarea data-bind="as:${a.id}:due" placeholder="e.g. 2026-09-15 or TBA" rows="1" data-autogrow data-duetoggle="${a.id}" title="Click for the calendar, or just type a date / TBA">${esc(a.due)}</textarea>
+        <input type="date" data-duepick="${a.id}" ${/^\d{4}-\d{2}-\d{2}$/.test(a.due || '') ? `value="${esc(a.due)}"` : ''} tabindex="-1" aria-hidden="true" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0">
+      </span>
       <div style="flex:0 0 auto"><button class="delbtn" data-action="rm_as:${a.id}" ${S.assessments.length===1?'disabled':''}>Remove</button></div>
     </div>`).join('');
-    return `<div class="card">
-      <div class="caption">Specify the assessments that make up the final grade (e.g. Participation, Assignment(s), Quizze(s), Midterms, Final Exam, Project).</div>
+    return `<div class="card card-grading">
+      <div class="cardtitle">Specify the assessments that make up the final grade (e.g. Participation, Assignment(s), Quiz(zes), Midterms, Final Exam, Project).</div>
       <div class="caption">(TBA = To Be Announced on D2L.)</div>
       <div class="gridhead" style="gap:16px; margin-bottom:8px">${header}</div>
       ${rows}
-      <div style="margin-top:6px"><button class="minibtn" data-action="add_as">+ Add row</button></div>
+      <div style="margin-top:6px"><button class="minibtn btn-add-lecture" data-action="add_as">+ Add row</button></div>
       <hr class="rule">
       <div class="polrow">
         <label class="toggle" style="font-weight:600; font-size:14px; color:#333; cursor:pointer">
@@ -584,7 +715,22 @@ document.addEventListener('input', e => {
   if (el.type === 'checkbox' && e.type === 'input') return;
   let v = el.type === 'checkbox' ? el.checked : el.value;
   setPath(el.dataset.bind, v);
+  if (el.tagName === 'TEXTAREA' && el.hasAttribute('data-autogrow')) autogrow(el);
   if (el.dataset.sync === 'weeks') syncWeeks(Number(el.value) || 1);
+});
+// Clicking a Due Date box drops the calendar; dismiss it (Esc) to type TBA instead.
+function openDuePicker(id) {
+  const picker = document.querySelector(`[data-duepick="${id}"]`);
+  if (!picker) return;
+  try {
+    if (typeof picker.showPicker === 'function') picker.showPicker();
+  } catch (err) {
+    /* No calendar available: do nothing â€” the text box stays focused so TBA stays typeable. */
+  }
+}
+document.addEventListener('focusin', e => {
+  const t = e.target.closest('[data-duetoggle]');
+  if (t) openDuePicker(t.dataset.duetoggle);
 });
 document.addEventListener('change', e => {
   const el = e.target.closest('[data-bind]');
@@ -593,6 +739,13 @@ document.addEventListener('change', e => {
     setPath(el.dataset.bind, v);
     if (el.dataset.bind === 'has_tutlab') syncTutlabRows(el.checked);
     if (el.dataset.bind === 'has_ta' || el.dataset.bind === 'has_tutlab') render();
+    return;
+  }
+  // Hidden calendar picker for a Due Date box: fills the row's text box with YYYY-MM-DD.
+  const dp = e.target.closest('[data-duepick]');
+  if (dp) {
+    const row = byId(S.assessments, dp.dataset.duepick);
+    if (row && dp.value) { row.due = dp.value; saveLS(); render(); }
     return;
   }
   const up = e.target.closest('[data-upload]');
@@ -1261,7 +1414,14 @@ pdfMake.fonts = {
     bolditalics: 'PTSerif-BoldItalic.ttf',
   },
 };
-loadLS().then(render);
+loadLS().then(() => {
+  const logo = document.getElementById('sideLogo');
+  if (logo) {
+    if (LOGO_DATA.indexOf('__LOGO') === -1) logo.src = LOGO_DATA;
+    else logo.style.display = 'none';
+  }
+  render();
+});
 </script>
 </body>
 </html>

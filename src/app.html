@@ -637,13 +637,13 @@ const RENDERERS = {
 
   weekly() {
     const rows = S.weeks.map((w, i) => `<div class="rowblock">
-      <div class="lbl">Week ${i + 1}</div>
+      <div class="lbl${i === 0 ? ' req' : ''}">Week ${i + 1}</div>
       <div class="row" style="margin-bottom:0">
         <div class="field"><label>Topics Covered</label><textarea data-bind="wk:${w.id}:topic" rows="2" placeholder="e.g. Chapter 1: Matrices and Determinants">${esc(w.topic)}</textarea></div>
         <div class="field"><label>Reading Material</label><textarea data-bind="wk:${w.id}:reading" rows="2" placeholder="e.g. Section 1.1-1.3, Chapter 1">${esc(w.reading)}</textarea></div>
       </div>
       <div style="text-align:right; margin-top:10px">
-        <button class="delbtn" data-action="rm_wk:${w.id}" ${S.weeks.length===1?'disabled':''}>Remove</button>
+        <button class="delbtn" data-action="rm_wk:${w.id}" ${(i === 0 || S.weeks.length === 1) ? 'disabled' : ''}>Remove</button>
       </div>
     </div>`).join('');
     return `<div class="card">
@@ -657,15 +657,15 @@ const RENDERERS = {
   },
 
   grading() {
-    const header = ['Assessment Method', 'Weight', 'Due Date'].map(h => `<span style="flex:1.2; font-size:14px; font-weight:700">${esc(h)}</span>`).join('');
-    const rows = S.assessments.map((a) => `<div class="row" style="align-items:flex-start; gap:8px; margin-bottom:10px">
+    const header = ['Assessment Method', 'Weight', 'Due Date'].map((h, i) => `<span style="flex:1.2; font-size:14px; font-weight:700${i === 0 ? ' req' : ''}">${esc(h)}</span>`).join('');
+    const rows = S.assessments.map((a, i) => `<div class="row" style="align-items:flex-start; gap:8px; margin-bottom:10px">
       <span style="flex:1.5; min-width:180px"><textarea data-bind="as:${a.id}:name" placeholder="e.g. Assignments" rows="1" data-autogrow>${esc(a.name)}</textarea></span>
       <span style="flex:1.2; min-width:140px"><textarea data-bind="as:${a.id}:weight" placeholder="e.g. 30%" rows="1" data-autogrow>${esc(a.weight)}</textarea></span>
       <span style="flex:1.5; min-width:180px">
         <textarea data-bind="as:${a.id}:due" placeholder="e.g. 2026-09-15 or TBA" rows="1" data-autogrow data-duetoggle="${a.id}" title="Click for the calendar, or just type a date / TBA">${esc(a.due)}</textarea>
         <input type="date" data-duepick="${a.id}" ${/^\d{4}-\d{2}-\d{2}$/.test(a.due || '') ? `value="${esc(a.due)}"` : ''} tabindex="-1" aria-hidden="true" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;border:0;padding:0">
       </span>
-      <div style="flex:0 0 auto"><button class="delbtn" data-action="rm_as:${a.id}" ${S.assessments.length===1?'disabled':''}>Remove</button></div>
+      <div style="flex:0 0 auto"><button class="delbtn" data-action="rm_as:${a.id}" ${(i === 0 || S.assessments.length === 1) ? 'disabled' : ''}>Remove</button></div>
     </div>`).join('');
     // Live total of named rows with valid weights (recomputed on each render,
     // and refreshed in place on every keystroke via refreshWeightTotal()).
@@ -790,9 +790,9 @@ document.addEventListener('click', e => {
     case 'add_tb': S.textbooks.push(newTB()); saveLS(); render(); break;
     case 'rm_tb': if (S.textbooks.length > 1) { S.textbooks = S.textbooks.filter(r => r.id !== id); saveLS(); render(); } break;
     case 'add_wk': S.weeks.push(newWK()); S.num_weeks = S.weeks.length; saveLS(); render(); break;
-    case 'rm_wk': if (S.weeks.length > 1) { S.weeks = S.weeks.filter(r => r.id !== id); S.num_weeks = S.weeks.length; saveLS(); render(); } break;
+    case 'rm_wk': if (S.weeks.length > 1 && S.weeks[0].id !== id) { S.weeks = S.weeks.filter(r => r.id !== id); S.num_weeks = S.weeks.length; saveLS(); render(); } break;
     case 'add_as': S.assessments.push(newAS()); saveLS(); render(); break;
-    case 'rm_as': if (S.assessments.length > 1) { S.assessments = S.assessments.filter(r => r.id !== id); saveLS(); render(); } break;
+    case 'rm_as': if (S.assessments.length > 1 && S.assessments[0].id !== id) { S.assessments = S.assessments.filter(r => r.id !== id); saveLS(); render(); } break;
     case 'add_cg': {
       const gid = (id && S.class_groups.includes(id)) ? id : S.class_groups[S.class_groups.length - 1];
       const n = S.classes_grid.filter(r => r.group === gid && !r.tut).length + 1;

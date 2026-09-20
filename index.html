@@ -1452,9 +1452,12 @@ function buildDoc(data) {
 
 // ============================================================= generate / save / load
 function generate() {
-  const missing = missingFields();
-  if (missing.length) {
-    setMsg('Required fields missing: ' + missing.join(', '), 'err');
+  const issues = tabIssues();
+  const flagged = TABS
+    .map(([id, label], i) => ({ n: i + 1, label, list: issues[id] || [] }))
+    .filter(t => t.list.length);
+  if (flagged.length) {
+    setMsg('Required fields missing:\n' + flagged.map(t => `${t.n}. ${t.label}: ${t.list.join(', ')}`).join('\n'), 'err');
     return;
   }
   const data = collect();

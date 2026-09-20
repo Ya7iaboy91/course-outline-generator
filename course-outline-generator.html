@@ -747,13 +747,22 @@ function setMsg(text, kind) {
 }
 
 // ============================================================= collect / validate
-// One class line. Tutorial/Lab rows are named; lecture rows stay plain.
-// Group prefix is optional so the grouped subcell table can rely on its
-// headers instead.
+// One class line as pdfmake spans. Lecture rows stay plain; the
+// "Tutorial/Lab, " prefix is bold with header shading. Group prefix is
+// optional so the grouped blocks can rely on their headers instead.
+function tutPrefix() { return { text: 'Tutorial/Lab, ', bold: true, background: HDR_CLR }; }
 function formatClassLine(c, withGroup) {
-  const grp = (withGroup && c.group) ? `Group ${c.group} - ` : '';
-  const name = c.tut ? 'Tutorial/Lab, ' : '';
-  return `${grp}${name}${c.day || ''}, Slot(${c.slot || ''}), at (${c.classroom || ''})`;
+  const parts = [];
+  if (withGroup && c.group) parts.push(`Group ${c.group} - `);
+  if (c.tut) parts.push(tutPrefix());
+  parts.push(`${c.day || ''}, Slot(${c.slot || ''}), at (${c.classroom || ''})`);
+  return parts;
+}
+// Join per-line span arrays into one text array with newline separators.
+function joinLines(lineArrays) {
+  const out = [];
+  lineArrays.forEach((la, i) => { if (i) out.push('\n'); out.push(...la); });
+  return out;
 }
 // Cell value for Classes Time/Location: plain multi-line text unless 2+
 // groups have entries â€” then one horizontal block per group stacked
@@ -765,15 +774,15 @@ function classesCell(data) {
   const rows = data.classes_rows || [];
   const grouped = rows.filter(r => r.group);
   if (!data.multi || !grouped.length) {
-    return rows.map(c => formatClassLine(c, true)).join('\n');
+    return { text: joinLines(rows.map(c => formatClassLine(c, true))) };
   }
   const order = [...new Set(grouped.map(r => r.group))];
   order.sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0));
   const stray = rows.filter(r => !r.group);
   if (stray.length) order.push('Other');
   const titleFor = g => (g === 'Other' ? 'Other' : `Group ${g}`);
-  const linesFor = g => (g === 'Other' ? stray : grouped.filter(r => r.group === g))
-    .map(c => formatClassLine(c, false)).join('\n');
+  const linesFor = g => joinLines((g === 'Other' ? stray : grouped.filter(r => r.group === g))
+    .map(c => formatClassLine(c, false)));
   // Fixed-width rule: the value column is ~150pt, so 130 always fits inside
   // without overflowing (canvas takes absolute coords only).
   const SEP = { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 130, y2: 0, lineWidth: 0.5, lineColor: '#000000' }], margin: [0, 2, 0, 8] };
@@ -809,7 +818,6 @@ function collect() {
   const data = {
     school_name: S.school_name, year_semester: S.year_semester, course_name: S.course_name,
     course_code: S.course_code, credits: S.credits, prerequisites: S.prerequisites,
-    classes_time: classesRows.map(c => formatClassLine(c, true)).join('\n'),
     classes_rows: classesRows,
     passing_grade: S.passing_grade,
     has_ta: !!S.has_ta,
@@ -912,17 +920,17 @@ const gridLayout = {
 
 function pw(text, o) { return { text, ...o }; }
 function sec(text, pageBreak) { return { text, style: 'section', ...(pageBreak ? { pageBreak: 'before' } : {}) }; }
-// Hanging indent: fixed label column + full-width text so wrapped lines
-// align under the text start; uniform gap via the container margin (single
-// source of spacing instead of a margin buried on one column).
+// LO layout: numbering starts after a 2cm indent (56.7pt), then a narrow
+// counter column and a tight gap before the text. Wrapped lines align under
+// the text start (hanging indent); uniform rhythm via the container margin.
 function LOs(data) {
   return data.learning_objectives.map((lo, i) => ({
     columns: [
-      { text: `LO.${i + 1}`, bold: true, width: 52 },
+      { text: `LO.${i + 1}`, bold: true, width: 36 },
       { text: lo.text, width: '*' },
     ],
-    columnGap: 8,
-    margin: [0, 0, 0, 6],
+    columnGap: 4,
+    margin: [26.7, 0, 0, 6],
   }));
 }
 function policyBlocks(text) {

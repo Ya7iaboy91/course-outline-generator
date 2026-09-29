@@ -7,30 +7,67 @@
   "prerequisites": "None",
   "classes_grid": [
     {
-      "id": "r1",
+      "id": "r1025",
       "name": "Lecture 1",
       "day": "Monday",
-      "slot": "",
+      "slot": "4",
       "classroom": "B105",
       "group": "1",
       "tut": false
     },
     {
-      "id": "r2",
+      "id": "r1026",
       "name": "Lecture 2",
       "day": "Thursday",
-      "slot": "",
+      "slot": "4",
       "classroom": "B327",
       "group": "1",
       "tut": false
+    },
+    {
+      "id": "r1000",
+      "name": "Lecture 1",
+      "day": "Tuesday",
+      "slot": "4",
+      "classroom": "B105",
+      "group": "2",
+      "tut": false
+    },
+    {
+      "id": "r1001",
+      "name": "Lecture 2",
+      "day": "Saturday",
+      "slot": "2",
+      "classroom": "B105",
+      "group": "2",
+      "tut": false
+    },
+    {
+      "id": "r1003",
+      "name": "Tutorial/Lab",
+      "day": "Tuesday",
+      "slot": "1",
+      "classroom": "B107",
+      "group": "1",
+      "tut": true
+    },
+    {
+      "id": "r1004",
+      "name": "Tutorial/Lab",
+      "day": "Sunday",
+      "slot": "1",
+      "classroom": "Online",
+      "group": "2",
+      "tut": true
     }
   ],
   "class_groups": [
-    "1"
+    "1",
+    "2"
   ],
   "passing_grade": "50%",
   "has_ta": true,
-  "has_tutlab": false,
+  "has_tutlab": true,
   "instructor": {
     "name": "Yahia Tohamy",
     "email": "Yahia.tohamy@uofcanada.edu.eg",
@@ -64,7 +101,7 @@
   ],
   "los": [
     {
-      "id": "r3",
+      "id": "r1027",
       "text": "Explain core data analysis concepts including data types, data quality issues, and basic descriptive statistics",
       "exam": true,
       "assignment": true,
@@ -72,7 +109,7 @@
       "project": true
     },
     {
-      "id": "r4",
+      "id": "r1028",
       "text": "Import and connect to a variety of data sources including Excel, CSV, SQL, and web-based files",
       "exam": true,
       "assignment": true,
@@ -80,15 +117,7 @@
       "project": true
     },
     {
-      "id": "r5",
-      "text": "Clean and transform raw datasets using Power Query without writing code",
-      "exam": true,
-      "assignment": true,
-      "activity": true,
-      "project": true
-    },
-    {
-      "id": "r6",
+      "id": "r1030",
       "text": "Design a relational data model using star-schema principles and create basic DAX measures",
       "exam": true,
       "assignment": true,
@@ -96,7 +125,7 @@
       "project": true
     },
     {
-      "id": "r7",
+      "id": "r1031",
       "text": "Perform exploratory data analysis using interactive visualizations and slicers",
       "exam": true,
       "assignment": true,
@@ -104,33 +133,27 @@
       "project": true
     },
     {
-      "id": "r8",
+      "id": "r1032",
       "text": "Design and build professional multi-page dashboards that tell a compelling data story",
       "exam": false,
       "assignment": true,
       "activity": true,
       "project": true
-    },
-    {
-      "id": "r9",
-      "text": "Apply AI-powered Power BI features for lightweight predictive analysis and natural language querying",
-      "exam": false,
-      "assignment": true,
-      "activity": false,
-      "project": true
     }
   ],
   "textbooks": [
     {
-      "id": "r10",
+      "id": "r1034",
       "image": null,
       "title": "Introduction to Data Science: Essential Concepts",
       "author": "Peters Morgan",
       "publisher": "CreateSpace Independent Publishing Platform",
       "isbn": "9781722799571"
-    },
+    }
+  ],
+  "materials": [
     {
-      "id": "r11",
+      "id": "r1035",
       "image": null,
       "title": "An Introduction to Data Science",
       "author": "Jeffrey M. Stanton",
@@ -138,17 +161,9 @@
       "isbn": "9780615969241"
     },
     {
-      "id": "r12",
+      "id": "r1036",
       "image": null,
       "title": "Student's Course Manual: Introduction to Data Science",
-      "author": "Yahia Tohamy",
-      "publisher": "Partially in (2025)",
-      "isbn": "None"
-    },
-    {
-      "id": "r13",
-      "image": null,
-      "title": "Assignment Book: Exercise and Practice",
       "author": "Yahia Tohamy",
       "publisher": "Partially in (2025)",
       "isbn": "None"
@@ -156,112 +171,112 @@
   ],
   "weeks": [
     {
-      "id": "r14",
+      "id": "r1038",
       "topic": "Ch 0: Introducing Student Manual and course overview. Ch1: Data Collection and Preparation: What is data science? Data properties and scientist toolbox. Formulating questions. Overview of AI, ML, and BI. Data Vs Information. Data types: Quantitative vs. Qualitative, Cross-sectional vs. time series vs. panel. Level of measurements: Nominal, ordinal, interval, and ratio.",
-      "reading": ""
+      "reading": "Chapter 1"
     },
     {
-      "id": "r15",
+      "id": "r1039",
       "topic": "Structured vs. unstructured data; quantitative vs. qualitative. Types of Variables: continuous vs. discrete, categorical vs. numerical. Data collection methods: Observational, survey, experiments, simulation.",
-      "reading": ""
+      "reading": "Chapter 1"
     },
     {
-      "id": "r16",
+      "id": "r1040",
       "topic": "Data cleaning techniques: Handling missing values, correcting data types, removing duplicates, fixing structural errors, filtering data, grouping data, and data wrangling. Normalization (Min-Max, Z-score), standardization, redistribution, handling/encoding categorical variables, creating new features (e.g., from dates), transformation, formatting, outlier detection. Addressing data scale and range issues.",
-      "reading": ""
+      "reading": "Chapter 1"
     },
     {
-      "id": "r17",
+      "id": "r1041",
       "topic": "Ch2: Exploratory Data Analysis (EDA): Understanding the data through: Descriptive statistics: Calculating summary statistics (mean, median, mode, standard deviation, variance, quartiles). Distribution analysis: histograms, skewness, kurtosis, density plots. Correlation analysis: Pearson, Spearman correlation coefficients, correlation matrices, and heatmaps.",
-      "reading": ""
+      "reading": "Chapter 1"
     },
     {
-      "id": "r18",
+      "id": "r1042",
       "topic": "Ch3: Data Visualization: Univariate: bar chart, pie chart, line chart, scatter plot, histogram, boxplot. Bivariate: scatter plot, bubble chart, line chart. Multivariate data visualization: heatmap, bubble chart, parallel coordinates, pair plots.",
-      "reading": ""
+      "reading": "Chapter 1"
     },
     {
-      "id": "r19",
+      "id": "r1043",
       "topic": "Dashboarding: Tableau, Power BI, interactive tools",
-      "reading": ""
+      "reading": "Chapter 1"
     },
     {
-      "id": "r20",
+      "id": "r1044",
       "topic": "Ch 4: Predictive Analysis and Machine Learning: Introduction to predictive analysis and machine learning. Supervised vs. unsupervised learning. Regression and classification basics.",
-      "reading": ""
+      "reading": "Chapter 1"
     },
     {
-      "id": "r21",
+      "id": "r1045",
       "topic": "Course project (Phase 1): Students will work on a real-world dataset to apply the concepts learned in the course. In this phase, students will focus on data collection, and cleaning techniques. They will submit a report detailing their data preparation process, including any challenges faced and how they were addressed.",
-      "reading": ""
+      "reading": "Chapter 1"
     },
     {
-      "id": "r22",
+      "id": "r1046",
       "topic": "Course project (Phase 2): Students will continue working on their course project, focusing on exploratory data analysis (EDA). They will perform descriptive statistics, distribution analysis, and correlation analysis on their dataset. Students will submit a report summarizing their findings, including visualizations and insights derived from the EDA process.",
-      "reading": ""
+      "reading": "Chapter 1"
     },
     {
-      "id": "r23",
+      "id": "r1047",
       "topic": "Course project (Phase 3): Students will continue working on their course project, focusing on data visualization. They will create interactive dashboards and visual representations of their data, highlighting key insights and trends. Students will submit their visualizations along with a brief report explaining their design choices and the insights derived from the data.",
-      "reading": ""
+      "reading": "Chapter 1"
     },
     {
-      "id": "r24",
+      "id": "r1048",
       "topic": "Project presentations: Students will present their final projects to the class, showcasing their data analysis, visualizations, and insights. Each student will have a set time to present their work, followed by a Q&A session where they will answer questions from peers and the instructor. The presentations will be evaluated based on clarity, depth of analysis, creativity in visualization, and overall communication of findings.",
-      "reading": ""
+      "reading": "Chapter 1"
     },
     {
-      "id": "r25",
+      "id": "r1049",
       "topic": "Reviewing edited drafts and finalizing the course projects.",
-      "reading": ""
+      "reading": "Chapter 1"
     }
   ],
   "num_weeks": 12,
   "assessments": [
     {
-      "id": "r26",
+      "id": "r1050",
       "name": "Assignments (3)",
       "weight": "15",
       "due": "Weeks 4, 8, 12",
       "los": "LO1-LO7"
     },
     {
-      "id": "r27",
+      "id": "r1051",
       "name": "Quiz 1 (Data Fundamentals + Power Query)",
       "weight": "10",
       "due": "Week 3",
       "los": "LO1-LO2"
     },
     {
-      "id": "r28",
+      "id": "r1052",
       "name": "Quiz 2 (Data Modeling + DAX)",
       "weight": "10",
       "due": "Week 6",
       "los": "LO3"
     },
     {
-      "id": "r29",
+      "id": "r1053",
       "name": "Quiz 3 (Visualization + AI Features)",
       "weight": "10",
       "due": "Week 10",
       "los": "LO4-LO5"
     },
     {
-      "id": "r30",
+      "id": "r1054",
       "name": "Midterm Project (EDA Dashboard)",
       "weight": "20",
       "due": "Week 8",
       "los": "LO2-LO4"
     },
     {
-      "id": "r31",
+      "id": "r1055",
       "name": "Project (End-to-End Analysis)",
       "weight": "30",
       "due": "Week 12",
       "los": "LO1-LO7"
     },
     {
-      "id": "r32",
+      "id": "r1056",
       "name": "Participation",
       "weight": "5",
       "due": "Ongoing",

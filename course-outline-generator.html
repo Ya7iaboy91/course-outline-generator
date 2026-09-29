@@ -556,9 +556,9 @@ const RENDERERS = {
       </div>
       <div class="gridhead" style="align-items:center; gap:12px; margin-bottom:6px; font-weight:400">
         <span style="flex:1; min-width:80px; font-weight:400"></span>
-        <span style="flex:2; min-width:140px; font-weight:400">Day</span>
-        <span style="flex:1.5; min-width:100px; font-weight:400">Slot</span>
-        <span style="flex:2; min-width:140px; font-weight:400">Classroom</span>
+        <span style="flex:2; min-width:140px; font-weight:400" class="req">Day</span>
+        <span style="flex:1.5; min-width:100px; font-weight:400" class="req">Slot</span>
+        <span style="flex:2; min-width:140px; font-weight:400" class="req">Classroom</span>
         <span style="flex:0 0 auto; width:36px"></span>
       </div>
       ${lectures.map(rowHtml).join('')}
@@ -688,7 +688,7 @@ const RENDERERS = {
         </div>
         <div class="tb-fields">
           <div class="field"><label class="req">Title</label><textarea data-bind="${kind}:${tb.id}:title" placeholder="Introduction to Linear Algebra" rows="1" data-autogrow>${esc(tb.title)}</textarea></div>
-          <div class="field"><label>Author(s)</label><textarea data-bind="${kind}:${tb.id}:author" placeholder="Jane Smith" rows="1" data-autogrow>${esc(tb.author)}</textarea></div>
+          <div class="field"><label${kind === 'tb' ? ' class="req"' : ''}>Author(s)</label><textarea data-bind="${kind}:${tb.id}:author" placeholder="Jane Smith" rows="1" data-autogrow>${esc(tb.author)}</textarea></div>
           <div class="field"><label>Publisher</label><textarea data-bind="${kind}:${tb.id}:publisher" placeholder="Academic Press" rows="1" data-autogrow>${esc(tb.publisher)}</textarea></div>
           <div class="field"><label>ISBN-13</label><textarea data-bind="${kind}:${tb.id}:isbn" placeholder="978-0123456789" rows="1" data-autogrow>${esc(tb.isbn)}</textarea></div>
         </div>

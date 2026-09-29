@@ -117,6 +117,10 @@ select[data-bind]{height:38px}
 .coverpick img{display:block;width:180px;height:auto;max-height:250px;object-fit:contain;border:1px solid #ddd;border-radius:6px}
 .coverph{display:flex;align-items:center;justify-content:center;width:180px;height:240px;border:2px dashed #a9adb6;border-radius:8px;font-size:72px;font-weight:700;color:#8b8b95;background:#f4f5f7;cursor:pointer;transition:border-color var(--trans),color var(--trans),background var(--trans)}
 .coverpick:hover .coverph{border-color:var(--accent);color:var(--accent);background:#fef2f4}
+/* Two boxes in one card: Primary Textbook, then Other Learning Materials */
+.card-textbooks .tb-section{margin:0}
+.card-textbooks .tb-sectiontitle{font-family:var(--serif);font-size:15px;font-weight:700;color:var(--brand);margin:0 0 10px}
+.card-textbooks .tb-wide .field textarea{width:100%}
 @media(max-width:700px){.card-textbooks .row{flex-wrap:wrap}.card-textbooks .tb-layout{flex-direction:column}.card-textbooks .tb-cover{flex:none}.card-textbooks .tb-fields{grid-template-columns:1fr;width:100%}}
 /* Grading tab: cells are already fractional columns, so boxes fill the cell and grow vertically */
 .card-grading textarea[data-autogrow]{display:block;width:100%;box-sizing:border-box;min-height:38px;font-size:14px;line-height:1.45;padding:8px 10px;border:1px solid #c9ccd2;border-radius:6px;resize:none;overflow:hidden;field-sizing:content}
@@ -218,6 +222,8 @@ const newTutRow = (group) => ({ id: nid(), name: 'Tutorial/Lab', day: '', slot: 
 const MAX_GROUPS = 8;
 const newLO = () => ({ id: nid(), text: '', exam: false, assignment: false, activity: false, project: false });
 const newTB = () => ({ id: nid(), image: null, title: '', author: '', publisher: '', isbn: '' });
+// Other course materials share the textbook row shape, so the same factory serves both.
+const newMT = newTB;
 const newWK = () => ({ id: nid(), topic: '', reading: '' });
 const newAS = () => ({ id: nid(), name: '', weight: '', due: '', los: '' });
 
@@ -251,6 +257,7 @@ function defaultState() {
     ],
     los: Array.from({ length: DEFAULT_LO_ROWS }, newLO),
     textbooks: [newTB()],
+    materials: [],
     weeks: Array.from({ length: DEFAULT_WEEKS }, newWK),
     num_weeks: DEFAULT_WEEKS,
     assessments: Array.from({ length: DEFAULT_ASMT_ROWS }, newAS),
@@ -367,6 +374,13 @@ function normalizeState(o) {
   }) : d.los;
 
   d.textbooks = Array.isArray(o && o.textbooks) ? o.textbooks.map(r => ({ id: nid(), image: (typeof r.image === 'string' && String(r.image).startsWith('data:image')) ? r.image : null, title: r.title||'', author: r.author||'', publisher: r.publisher||'', isbn: r.isbn||'' })) : d.textbooks;
+  d.materials = Array.isArray(o && o.materials) ? o.materials.map(r => ({ id: nid(), image: (typeof r.image === 'string' && String(r.image).startsWith('data:image')) ? r.image : null, title: r.title||'', author: r.author||'', publisher: r.publisher||'', isbn: r.isbn||'' })) : d.materials;
+  // Single primary textbook. Saves predating this held several textbooks, so any
+  // beyond the first become secondary materials rather than being dropped. One
+  // pass, then textbooks.length is 1 and this is a no-op on later loads. The
+  // second line keeps the primary block renderable for saves with none.
+  if (d.textbooks.length > 1) d.materials.unshift(...d.textbooks.splice(1));
+  if (!d.textbooks.length) d.textbooks = [newTB()];
   d.weeks = Array.isArray(o && o.weeks) ? o.weeks.map(r => ({ id: nid(), topic: r.topic||'', reading: r.reading||'' })) : d.weeks;
   d.assessments = Array.isArray(o && o.assessments) ? o.assessments.map(r => ({ id: nid(), name: r.name||'', weight: weightDisplay(r.weight||''), due: r.due||'', los: r.los||'' })) : d.assessments;
   d.num_weeks = Math.max(1, d.weeks.length);
@@ -383,6 +397,7 @@ function setPath(bind, value) {
   const kind = p[0];
   if (kind === 'lo') { const r = byId(S.los, p[1]); if (r) r[p[2]] = value; }
   else if (kind === 'tb') { const r = byId(S.textbooks, p[1]); if (r) r[p[2]] = value; }
+  else if (kind === 'mt') { const r = byId(S.materials, p[1]); if (r) r[p[2]] = value; }
   else if (kind === 'wk') { const r = byId(S.weeks, p[1]); if (r) r[p[2]] = value; }
   else if (kind === 'as') { const r = byId(S.assessments, p[1]); if (r) { let v = value; if (p[2] === 'weight' && typeof v === 'string') v = v.replace(/%/g, '').trim(); r[p[2]] = v; } }
   else if (kind === 'cg') { const r = byId(S.classes_grid, p[1]); if (r) r[p[2]] = value; }
@@ -646,28 +661,44 @@ const RENDERERS = {
   },
 
   textbooks() {
-    const rows = S.textbooks.map((tb) => `<div class="rowblock">
-      <div class="lbl">Textbook</div>
+    // One template serves both sections: the primary textbook and the secondary
+    // materials share the same fields, so only the bind prefix, label and Remove
+    // rules differ.
+    const rowHtml = (tb, kind, list, label, minRows, hideRemove) => `<div class="rowblock">
+      <div class="lbl">${esc(label)}</div>
       <div class="tb-layout">
         <div class="tb-cover">
           <label class="coverpick" title="Click to ${tb.image ? 'replace' : 'add'} cover image (png/jpg)">
-            <input type="file" accept="image/png,image/jpeg" data-upload="tb:${tb.id}" style="display:none">
-            ${tb.image ? `<img src="${tb.image}" alt="Textbook cover">` : `<span class="coverph" aria-hidden="true">?</span>`}
+            <input type="file" accept="image/png,image/jpeg" data-upload="${kind}:${tb.id}" style="display:none">
+            ${tb.image ? `<img src="${tb.image}" alt="${esc(label)} cover">` : `<span class="coverph" aria-hidden="true">?</span>`}
           </label>
-          <button class="delbtn" data-action="rm_tb:${tb.id}" ${S.textbooks.length===1?'disabled':''}>Remove</button>
+          ${hideRemove ? '' : `<button class="delbtn" data-action="rm_${kind}:${tb.id}" ${list.length <= minRows ? 'disabled' : ''}>Remove</button>`}
         </div>
         <div class="tb-fields">
-          <div class="field"><label class="req">Title</label><textarea data-bind="tb:${tb.id}:title" placeholder="Introduction to Linear Algebra" rows="1" data-autogrow>${esc(tb.title)}</textarea></div>
-          <div class="field"><label>Author(s)</label><textarea data-bind="tb:${tb.id}:author" placeholder="Jane Smith" rows="1" data-autogrow>${esc(tb.author)}</textarea></div>
-          <div class="field"><label>Publisher</label><textarea data-bind="tb:${tb.id}:publisher" placeholder="Academic Press" rows="1" data-autogrow>${esc(tb.publisher)}</textarea></div>
-          <div class="field"><label>ISBN-13</label><textarea data-bind="tb:${tb.id}:isbn" placeholder="978-0123456789" rows="1" data-autogrow>${esc(tb.isbn)}</textarea></div>
+          <div class="field"><label class="req">Title</label><textarea data-bind="${kind}:${tb.id}:title" placeholder="Introduction to Linear Algebra" rows="1" data-autogrow>${esc(tb.title)}</textarea></div>
+          <div class="field"><label>Author(s)</label><textarea data-bind="${kind}:${tb.id}:author" placeholder="Jane Smith" rows="1" data-autogrow>${esc(tb.author)}</textarea></div>
+          <div class="field"><label>Publisher</label><textarea data-bind="${kind}:${tb.id}:publisher" placeholder="Academic Press" rows="1" data-autogrow>${esc(tb.publisher)}</textarea></div>
+          <div class="field"><label>ISBN-13</label><textarea data-bind="${kind}:${tb.id}:isbn" placeholder="978-0123456789" rows="1" data-autogrow>${esc(tb.isbn)}</textarea></div>
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+    // Exactly one primary textbook; every other book is a secondary material.
+    // It can never be removed, so its Remove button is omitted outright.
+    const primaryRows = S.textbooks[0] ? rowHtml(S.textbooks[0], 'tb', S.textbooks, 'Textbook', 1, true) : '';
+    const matRows = S.materials.map(mt => rowHtml(mt, 'mt', S.materials, 'Other Material', 0)).join('');
     return `<div class="card card-textbooks">
-      <div class="cardtitle">At least one textbook is required.</div>
-      ${rows}
-      <div><button class="minibtn btn-add-lecture" data-action="add_tb">+ Add textbook</button></div>
+      <div class="tb-section">
+        <div class="tb-sectiontitle">Primary Textbook</div>
+        <div class="caption" style="margin:0 0 10px">Should be an academic formal textbook</div>
+        ${primaryRows}
+      </div>
+      <hr class="rule">
+      <div class="tb-section">
+        <div class="tb-sectiontitle">Other Learning Materials (Optional)</div>
+        <div class="caption" style="margin:0 0 10px">Add a secondary textbook, lecture notes, slides, or other course material below.</div>
+        ${matRows}
+        <div><button class="minibtn btn-add-lecture" data-action="add_mt">+ Add Textbook/Materials</button></div>
+      </div>
     </div>`;
   },
 
@@ -783,7 +814,7 @@ document.addEventListener('change', e => {
     const parts = up.dataset.upload.split(':');
     scaleImage(up.files[0], 480, 640, b64 => {
       if (!b64) { setMsg('Could not read that image.', 'err'); return; }
-      const row = byId(S.textbooks, parts[1]);
+      const row = byId(parts[0] === 'mt' ? S.materials : S.textbooks, parts[1]);
       if (row) { row.image = b64; saveLS(); render(); }
     });
   }
@@ -823,8 +854,8 @@ document.addEventListener('click', e => {
   switch (name) {
     case 'add_lo': S.los.push(newLO()); saveLS(); render(); break;
     case 'rm_lo': if (S.los.length > 1 && S.los[0].id !== id) { S.los = S.los.filter(r => r.id !== id); saveLS(); render(); } break;
-    case 'add_tb': S.textbooks.push(newTB()); saveLS(); render(); break;
-    case 'rm_tb': if (S.textbooks.length > 1) { S.textbooks = S.textbooks.filter(r => r.id !== id); saveLS(); render(); } break;
+    case 'add_mt': S.materials.push(newMT()); saveLS(); render(); break;
+    case 'rm_mt': S.materials = S.materials.filter(r => r.id !== id); saveLS(); render(); break;
     case 'add_wk': S.weeks.push(newWK()); S.num_weeks = S.weeks.length; saveLS(); render(); break;
     case 'rm_wk': if (S.weeks.length > 1 && S.weeks[0].id !== id) { S.weeks = S.weeks.filter(r => r.id !== id); S.num_weeks = S.weeks.length; saveLS(); render(); } break;
     case 'add_as': S.assessments.push(newAS()); saveLS(); render(); break;
@@ -1070,6 +1101,8 @@ function collect() {
       return obj;
     });
   data.textbooks = S.textbooks.filter(r => r.title && r.title.trim())
+    .map(r => ({ image: r.image || 'default', title: r.title, author: r.author, publisher: r.publisher, isbn: r.isbn }));
+  data.materials = S.materials.filter(r => r.title && r.title.trim())
     .map(r => ({ image: r.image || 'default', title: r.title, author: r.author, publisher: r.publisher, isbn: r.isbn }));
   data.weeks = S.weeks.filter(r => (r.topic && r.topic.trim()) || (r.reading && r.reading.trim()))
     .map((r, i) => ({ num: i + 1, topic: r.topic || '', reading: r.reading || '' }));
@@ -1403,21 +1436,33 @@ function buildDoc(data) {
   // ---- REQUIRED TEXTBOOK & COURSE MATERIAL
   C.push(sec('REQUIRED TEXTBOOK & COURSE MATERIAL'));
   C.push({ text: 'The following is a list of textbooks that are strongly recommended for this course:', margin: [0, 0, 0, 8] });
+  // Cover + details cell shared by both halves of the table.
+  const coverCell = (img) => ({ image: (img && String(img).startsWith('data:image')) ? img : COVER_DATA, fit: [50, 70], alignment: 'center' });
+  const detailsCell = (title, author, publisher, isbn) => ({
+    stack: [
+      { text: [{ text: 'Title: ', bold: true }, title + ','] },
+      { text: [{ text: 'Authors: ', bold: true }, author + ','] },
+      { text: [{ text: 'Publisher: ', bold: true }, publisher] },
+      { text: [{ text: 'ISBN-13: ', bold: true }, isbn + '.'] },
+    ],
+  });
+  // pdfmake spells the span key colSpan; a `colspan` key is silently ignored and
+  // the label would only fill the first column.
+  const banner = (text) => [{ text, colSpan: 2, bold: true, alignment: 'center', fillColor: GRAYBG }, {}];
+  const matBody = data.materials.map(mt => [coverCell(mt.image), detailsCell(mt.title, mt.author, mt.publisher, mt.isbn)]);
+  // One table with two labelled halves and no column header rows. A label is
+  // only emitted when that half actually has rows, so an unfilled primary never
+  // leaves an empty "Primary Textbooks" heading behind.
+  const tbBody = [];
   if (data.textbooks.length) {
-    const tbBody = [[
-      { text: 'Cover', bold: true, fillColor: HDR_CLR, alignment: 'center' },
-      { text: 'Details', bold: true, fillColor: HDR_CLR },
-    ], ...data.textbooks.map(tb => [
-      { image: (tb.image && String(tb.image).startsWith('data:image')) ? tb.image : COVER_DATA, fit: [50, 70], alignment: 'center' },
-      {
-        stack: [
-          { text: [{ text: 'Title: ', bold: true }, tb.title + ','] },
-          { text: [{ text: 'Authors: ', bold: true }, tb.author + ','] },
-          { text: [{ text: 'Publisher: ', bold: true }, tb.publisher] },
-          { text: [{ text: 'ISBN-13: ', bold: true }, tb.isbn + '.'] },
-        ],
-      },
-    ])];
+    tbBody.push(banner('Primary Textbooks'));
+    tbBody.push(...data.textbooks.map(tb => [coverCell(tb.image), detailsCell(tb.title, tb.author, tb.publisher, tb.isbn)]));
+  }
+  if (matBody.length) {
+    tbBody.push(banner('Other Learning Materials'));
+    tbBody.push(...matBody);
+  }
+  if (tbBody.length) {
     C.push({
       table: { widths: [62, '*'], body: tbBody },
       layout: gridLayout,

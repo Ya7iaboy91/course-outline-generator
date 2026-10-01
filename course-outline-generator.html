@@ -385,8 +385,8 @@ function normalizeState(o) {
     return loObj;
   }) : d.los;
 
-  d.textbooks = Array.isArray(o && o.textbooks) ? o.textbooks.map(r => ({ id: nid(), image: (typeof r.image === 'string' && String(r.image).startsWith('data:image')) ? r.image : null, title: r.title||'', author: r.author||'', publisher: r.publisher||'', isbn: r.isbn||'' })) : d.textbooks;
-  d.materials = Array.isArray(o && o.materials) ? o.materials.map(r => ({ id: nid(), image: (typeof r.image === 'string' && String(r.image).startsWith('data:image')) ? r.image : null, title: r.title||'', author: r.author||'', publisher: r.publisher||'', isbn: r.isbn||'' })) : d.materials;
+  d.textbooks = Array.isArray(o && o.textbooks) ? o.textbooks.map(r => ({ id: nid(), image: (typeof r.image === 'string' && String(r.image).startsWith('data:image')) ? r.image : null, title: r.title||'', author: r.author||'', publisher: r.publisher||'', isbn: stripSpaces(r.isbn||'') })) : d.textbooks;
+  d.materials = Array.isArray(o && o.materials) ? o.materials.map(r => ({ id: nid(), image: (typeof r.image === 'string' && String(r.image).startsWith('data:image')) ? r.image : null, title: r.title||'', author: r.author||'', publisher: r.publisher||'', isbn: stripSpaces(r.isbn||'') })) : d.materials;
   // Single primary textbook. Saves predating this held several textbooks, so any
   // beyond the first become secondary materials rather than being dropped. One
   // pass, then textbooks.length is 1 and this is a no-op on later loads. The
@@ -404,12 +404,18 @@ function normalizeState(o) {
 // ============================================================= small helpers
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 function byId(arr, id) { return arr.find(r => r.id === id); }
+// URL cells (primary + secondary textbook URL) never hold spaces: the spacebar
+// is blocked at keydown, and anything arriving via paste, autofill,
+// drag-and-drop or an old save is stripped on write. The stored key stays
+// `isbn` so old saves keep working.
+const isUrlField = (kind, field) => (kind === 'tb' || kind === 'mt') && field === 'isbn';
+const stripSpaces = (v) => typeof v === 'string' ? v.replace(/\s+/g, '') : v;
 function setPath(bind, value) {
   const p = bind.split(':');
   const kind = p[0];
   if (kind === 'lo') { const r = byId(S.los, p[1]); if (r) r[p[2]] = value; }
-  else if (kind === 'tb') { const r = byId(S.textbooks, p[1]); if (r) r[p[2]] = value; }
-  else if (kind === 'mt') { const r = byId(S.materials, p[1]); if (r) r[p[2]] = value; }
+  else if (kind === 'tb') { const r = byId(S.textbooks, p[1]); if (r) r[p[2]] = isUrlField(kind, p[2]) ? stripSpaces(value) : value; }
+  else if (kind === 'mt') { const r = byId(S.materials, p[1]); if (r) r[p[2]] = isUrlField(kind, p[2]) ? stripSpaces(value) : value; }
   else if (kind === 'wk') { const r = byId(S.weeks, p[1]); if (r) r[p[2]] = value; }
   else if (kind === 'as') { const r = byId(S.assessments, p[1]); if (r) { let v = value; if (p[2] === 'weight' && typeof v === 'string') v = v.replace(/%/g, '').trim(); r[p[2]] = v; } }
   else if (kind === 'cg') { const r = byId(S.classes_grid, p[1]); if (r) r[p[2]] = value; }
@@ -690,7 +696,7 @@ const RENDERERS = {
           <div class="field"><label class="req">Title</label><textarea data-bind="${kind}:${tb.id}:title" placeholder="Introduction to Linear Algebra" rows="1" data-autogrow>${esc(tb.title)}</textarea></div>
           <div class="field"><label${kind === 'tb' ? ' class="req"' : ''}>Author(s)</label><textarea data-bind="${kind}:${tb.id}:author" placeholder="Jane Smith" rows="1" data-autogrow>${esc(tb.author)}</textarea></div>
           <div class="field"><label>Publisher</label><textarea data-bind="${kind}:${tb.id}:publisher" placeholder="Academic Press" rows="1" data-autogrow>${esc(tb.publisher)}</textarea></div>
-          <div class="field"><label>ISBN-13</label><textarea data-bind="${kind}:${tb.id}:isbn" placeholder="978-0123456789" rows="1" data-autogrow>${esc(tb.isbn)}</textarea></div>
+          <div class="field"><label>URL</label><textarea data-bind="${kind}:${tb.id}:isbn" placeholder="https://example.com/textbook" rows="1" data-autogrow>${esc(tb.isbn)}</textarea></div>
         </div>
       </div>
     </div>`;
@@ -780,12 +786,27 @@ const RENDERERS = {
 };
 
 // ============================================================= actions
+// URL cells reject the spacebar outright; paste/autofill/drag-and-drop (which
+// bypass keydown) are stripped on input below and again in setPath.
+document.addEventListener('keydown', e => {
+  const el = e.target && e.target.closest && e.target.closest('[data-bind]');
+  if (!el || e.key !== ' ') return;
+  const bp = String(el.dataset.bind || '').split(':');
+  if (isUrlField(bp[0], bp[2])) e.preventDefault();
+});
 document.addEventListener('input', e => {
   const el = e.target.closest('[data-bind]');
   if (!el) return;
   if (el.type === 'checkbox' && e.type === 'input') return;
   let v = el.type === 'checkbox' ? el.checked : el.value;
   setPath(el.dataset.bind, v);
+  // URL fields never hold spaces: echo the stripped value back so pasted
+  // spaces visibly disappear from the field without losing focus.
+  const bp = String(el.dataset.bind || '').split(':');
+  if (isUrlField(bp[0], bp[2]) && typeof v === 'string') {
+    const clean = stripSpaces(v);
+    if (clean !== v) el.value = clean;
+  }
   if (el.tagName === 'TEXTAREA' && el.hasAttribute('data-autogrow')) autogrow(el);
   if (el.dataset.sync === 'weeks') syncWeeks(Number(el.value) || 1);
   refreshWeightTotal();
@@ -1450,27 +1471,51 @@ function buildDoc(data) {
   C.push({ text: 'The following is a list of textbooks that are strongly recommended for this course:', margin: [0, 0, 0, 8] });
   // Cover + details cell shared by both halves of the table.
   const coverCell = (img) => ({ image: (img && String(img).startsWith('data:image')) ? img : COVER_DATA, fit: [50, 70], alignment: 'center' });
-  const detailsCell = (title, author, publisher, isbn) => ({
+  // The stored key is still `isbn` so old saves keep working; only the label
+  // and the PDF line are now a URL. { text, link } is what makes pdfmake emit
+  // a real clickable PDF URI action, and the blue underline is what makes it
+  // recognizable as a link (pdfmake styles nothing by itself). Pasted URLs
+  // often carry stray spaces, which are illegal in a URI, so all whitespace is
+  // stripped from both the target and the display text; a bare domain gets
+  // https:// so it opens; an empty value drops the row instead of printing a
+  // dead "URL: ".
+  const detailsCell = (title, author, publisher) => ({
     stack: [
       { text: [{ text: 'Title: ', bold: true }, title + ','] },
       { text: [{ text: 'Authors: ', bold: true }, author + ','] },
       { text: [{ text: 'Publisher: ', bold: true }, publisher] },
-      { text: [{ text: 'ISBN-13: ', bold: true }, isbn + '.'] },
     ],
   });
+  // A long link wrapped inside the narrow details column prints as ragged lines
+  // with gaps, which reads as broken text rather than one address. So the link
+  // gets its own full-width row at a smaller size: a 115-character URL (the
+  // NetAcad case) is ~495pt of text at 9pt but the table is only ~481pt wide,
+  // so 9pt still hard-broke it mid-token. At 7.5pt it fits on one line.
+  const linkRow = (isbn) => {
+    const url = stripSpaces(isbn || '');
+    if (!url) return null;
+    return [{ colSpan: 2, fontSize: 7.5, margin: [0, 3, 6, 0], text: [{ text: 'URL: ', bold: true }, { text: url, link: /^https?:\/\//i.test(url) ? url : 'https://' + url, color: 'blue', decoration: 'underline' }] }, {}];
+  };
+  // One cover+details row per book, followed by its link row when it has a URL.
+  const bookRows = (r) => {
+    const rows = [[coverCell(r.image), detailsCell(r.title, r.author, r.publisher)]];
+    const lr = linkRow(r.isbn);
+    if (lr) rows.push(lr);
+    return rows;
+  };
   // pdfmake spells the span key colSpan; a `colspan` key is silently ignored and
   // the label would only fill the first column.
   const banner = (text) => [{ text, colSpan: 2, bold: true, alignment: 'center', fillColor: GRAYBG }, {}];
-  const matBody = data.materials.map(mt => [coverCell(mt.image), detailsCell(mt.title, mt.author, mt.publisher, mt.isbn)]);
+  const matBody = data.materials.flatMap(bookRows);
   // One table with two labelled halves and no column header rows. A label is
   // only emitted when that half actually has rows, so an unfilled primary never
   // leaves an empty "Primary Textbooks" heading behind.
   const tbBody = [];
   if (data.textbooks.length) {
     tbBody.push(banner('Primary Textbooks'));
-    tbBody.push(...data.textbooks.map(tb => [coverCell(tb.image), detailsCell(tb.title, tb.author, tb.publisher, tb.isbn)]));
+    tbBody.push(...data.textbooks.flatMap(bookRows));
   }
-  if (matBody.length) {
+  if (data.materials.length) {
     tbBody.push(banner('Other Learning Materials'));
     tbBody.push(...matBody);
   }
